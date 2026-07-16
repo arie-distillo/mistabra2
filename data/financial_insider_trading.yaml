@@ -1,0 +1,186 @@
+---
+name: "Insider Trading Investigation — Financial Markets"
+domain: financial_compliance
+description: >
+  A compliance investigation into potential insider trading ahead of a pharmaceutical
+  company's failed drug trial announcement. Multiple data sources are being evaluated
+  to determine whether non-public information was misused and by whom.
+
+analytical_context: >
+  Securities compliance investigation, insider trading enforcement context.
+  Brokerage records and FDA timeline documentation are highest-credibility
+  (subpoena-obtained, objective). Communication records establish the channel
+  but not the content. The sequencing of events (call → trade → announcement)
+  is the primary discriminating evidence. Assess whether the timing is
+  consistent with the public-information hypothesis or requires MNPI to explain.
+
+ground_truth:
+  ach_conclusion: >
+    H1 (Marcus traded on MNPI) and H2 (Elena disclosed intentionally) are both
+    strongly supported — the call-to-trade-to-outcome sequence is highly
+    improbable under the public-information hypothesis. H3 (public analysis
+    alone) is decisively eliminated by the timing precision and the 23-minute
+    call the day before FDA notification reached the board. H4 (additional
+    co-conspirators) has insufficient evidence either way.
+  method_note: >
+    The key discriminating evidence is the 23-minute call between Elena Marsh
+    and Marcus Marsh placed after FDA pre-notification but before board
+    notification. This directly connects MNPI access to the trading window.
+    H3 should score highly_inconsistent across all three policies — it is
+    the scenario's clearest ground truth test case.
+  claims:
+    - id: H1
+      short_text: "Marcus Marsh traded on MNPI"
+      expected_verdict: consistent
+      expected_score_range: [0.5, 0.9]
+      eliminated: false
+      is_surviving_hypothesis: true
+      rationale: >
+        Trade timing (post-FDA pre-notification call, pre-board notification),
+        option structure (directional, short-dated), and 14x volume anomaly
+        are collectively decisive. Any one piece would be ambiguous; together
+        they are highly probative.
+      expected_worst_cell_range: [-0.1, 1.0]
+      expected_decisive_inconsistency_count_min: 0
+
+    - id: H2
+      short_text: "Dr. Elena Marsh intentionally disclosed MNPI"
+      expected_verdict: weakly_consistent
+      expected_score_range: [0.2, 0.6]
+      eliminated: false
+      rationale: >
+        The call is established; intent is not. Circumstantial evidence
+        (family relationship, timing, outcome) supports intentional disclosure
+        but does not prove it — a misguided casual comment would produce the
+        same observable evidence. Weakly consistent is appropriate.
+      expected_worst_cell_range: [-0.2, 1.0]
+      expected_decisive_inconsistency_count_min: 0
+
+    - id: H3
+      short_text: "trading based solely on public analysis"
+      expected_verdict: highly_inconsistent
+      expected_score_range: [-1.0, -0.5]
+      eliminated: true
+      rationale: >
+        The 23-minute call between a PharmaCo clinical officer and her brother
+        on the day FDA pre-notified (before board awareness) cannot be
+        explained by public information. The timing is decisive. All policies
+        should score this highly_inconsistent.
+      expected_worst_cell_range: [-1.0, -0.5]
+      expected_decisive_inconsistency_count_min: 1
+
+    - id: H4
+      short_text: "additional co-conspirators / tippees"
+      expected_verdict: not_applicable
+      expected_score_range: [-0.1, 0.2]
+      eliminated: false
+      rationale: >
+        No evidence confirms or decisively contradicts additional participants.
+        The trading volume could support a network but is consistent with
+        a single-actor explanation. Not_applicable is correct.
+      expected_worst_cell_range: [-0.3, 1.0]
+      expected_decisive_inconsistency_count_min: 0
+
+episodes:
+  - content: >
+      Trade surveillance alert (2024-09-02): Unusual put option volume detected on
+      PharmaCo Inc. (ticker: PMCO) — 14x average daily volume in the 48-hour window
+      preceding the FDA announcement. Strike prices clustered at 15-20% below current
+      market price with 30-day expiry, consistent with a directional bet on price decline.
+    source_type: DATA_FEED
+    credibility: 0.95
+    metadata: {system: TradeGuard, ticker: PMCO, alert_id: TGA-2024-0902}
+
+  - content: >
+      Communication record (2024-09-01): Internal messaging logs show a 23-minute
+      call between Dr. Elena Marsh (PharmaCo Head of Clinical Affairs) and her brother
+      Marcus Marsh, a portfolio manager at Harrington Capital. Call placed from Dr.
+      Marsh's office line at 3:47 PM, one day before the FDA rejection was communicated
+      to PharmaCo's board.
+    source_type: CONTEXT
+    credibility: 0.90
+    metadata: {source: telecom_records, reviewed_by: compliance_team}
+
+  - content: >
+      Brokerage account records: Marcus Marsh purchased 2,400 put option contracts on
+      PMCO through his personal account at Interactive Brokers on 2024-09-01 at 4:22 PM
+      (after market close). Total cost basis $187,000. Potential profit if stock drops
+      20%: approximately $2.1M.
+    source_type: CONTEXT
+    credibility: 0.97
+    metadata: {source: brokerage_subpoena, broker: InteractiveBrokers, case: SEC-2024-0915}
+
+  - content: >
+      FDA timeline documentation: The FDA issued its Complete Response Letter rejecting
+      PMCO's NDA for drug candidate PM-2024 on 2024-09-03 at 9:00 AM. The rejection
+      was based on deficiencies in the Phase III trial statistical analysis. PharmaCo
+      received a pre-notification call from FDA on 2024-09-02 at 2:30 PM. Callers on
+      that FDA call: PharmaCo CEO, CFO, General Counsel, and Dr. Elena Marsh.
+    source_type: CONTEXT
+    credibility: 0.99
+    metadata: {source: FDA_records, FOIA_request: 2024-F-12847}
+
+  - content: >
+      PMCO stock price movement: Following the FDA announcement on 2024-09-03,
+      PMCO stock declined 34.7% at open, closing at -31.2% on the day. The put options
+      purchased by Marcus Marsh gained approximately 680% in value, yielding an
+      estimated profit of $1.27M when positions were closed on 2024-09-04.
+    source_type: DATA_FEED
+    credibility: 0.96
+    metadata: {source: market_data, provider: Bloomberg}
+
+  - content: >
+      Alternative explanation — public information: A bearish sell-side research note
+      on PMCO was published by Goldman Sachs analyst Jennifer Wu on 2024-08-28, citing
+      concerns about PM-2024's trial design and statistical power. The note was publicly
+      available. Several institutional investors also increased put positions in the
+      same week, suggesting the market anticipated negative FDA action independently.
+    source_type: RESEARCH_PAPER
+    credibility: 0.85
+    metadata: {source: public_research, analyst: "Jennifer Wu / GS", date: "2024-08-28"}
+
+  - content: >
+      Interview record: Marcus Marsh's statement to SEC investigators (2024-09-18):
+      Marsh claims his PMCO put position was based on the Goldman Sachs research note
+      and his own analysis of FDA approval rates for similar drug classes. He states
+      he has not spoken to his sister about PharmaCo matters since a family dinner
+      in July 2024 and that the September 1st call was regarding their mother's
+      birthday arrangements.
+    source_type: EXPERT_OPINION
+    credibility: 0.45
+    metadata: {source: SEC_interview, date: "2024-09-18", credibility_note: "subject under investigation"}
+
+  - content: >
+      Digital forensics: Analysis of Dr. Marsh's office phone metadata shows the call
+      on 2024-09-01 lasted 23 minutes. Text message records from the same day contain
+      a message from Marcus to Elena at 6:14 PM reading "got it, thanks" — sent
+      90 minutes after the phone call. No prior financial communication patterns
+      identified between the siblings in the preceding 12 months of records reviewed.
+    source_type: CONTEXT
+    credibility: 0.92
+    metadata: {source: digital_forensics, reviewed_by: FBI_cyber_unit}
+
+claims:
+  - text: "Marcus Marsh traded PMCO put options based on material non-public information (MNPI)"
+    claim_type: persistent
+    context_summary: >
+      The core insider trading hypothesis — did Marcus receive and act on the FDA rejection
+      information from his sister Dr. Elena Marsh before it was public.
+
+  - text: "Dr. Elena Marsh intentionally disclosed MNPI to her brother Marcus Marsh"
+    claim_type: persistent
+    context_summary: >
+      Whether the disclosure was deliberate or accidental, and whether Dr. Marsh
+      understood the legal implications of sharing this information.
+
+  - text: "Marcus Marsh's trading decision was based solely on publicly available analysis"
+    claim_type: persistent
+    context_summary: >
+      Marcus's defence claim that the Goldman Sachs note and general FDA approval
+      statistics motivated the trade independently of any inside information.
+
+  - text: "Additional co-conspirators or tippees beyond Marcus Marsh are involved in this scheme"
+    claim_type: persistent
+    context_summary: >
+      Whether the unusual options volume from multiple unrelated accounts suggests
+      a wider distribution of MNPI beyond the immediate family relationship.

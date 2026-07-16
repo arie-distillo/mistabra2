@@ -1,0 +1,25 @@
+[project]
+name = "counterpoint"
+version = "0.1.0"
+description = "Corpus hypothesis validation — PoC step 1 (ingest, chunk, atomize, lift grid, matrix)"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy",
+    "scikit-learn",
+    "pyyaml",
+    "python-dotenv",
+    "fastapi",
+    "python-fasthtml",
+    "uvicorn",
+]
+
+[project.optional-dependencies]
+llm = ["openai"]                     # OpenRouter client
+embed = ["sentence-transformers"]    # real semantic chunking
+test = ["pytest", "httpx"]
+
+[tool.pytest.ini_options]
+# pytest runs UNIT tests only. Acceptance tests are HTTP black-box and run via
+# `python -m tests.acceptance.run` (local or cloud), not through pytest.
+testpaths = ["tests/unit"]
+addopts = "-q"

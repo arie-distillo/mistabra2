@@ -1,0 +1,189 @@
+---
+name: "Semiconductor Supply Chain Disruption — Manufacturing Intelligence"
+domain: supply_chain
+description: >
+  A major automotive OEM is experiencing unexplained shortages of a critical
+  microcontroller (MCU) used in its EV battery management systems. Intelligence
+  is being gathered to assess root causes, supplier reliability, and strategic risk.
+
+analytical_context: >
+  Semiconductor supply chain crisis assessment, automotive OEM context.
+  ERP system data and CFO financial estimates are highest-credibility.
+  Supplier communication and engineering assessments are high-credibility.
+  Market intelligence (Gartner, competitor buffer stocks) is medium-credibility.
+  Geopolitical risk assessment is inherently speculative and lower-credibility.
+  The key analytical discipline is separating factual claims (root cause,
+  duration) from decision recommendations (optimal response).
+
+ground_truth:
+  ach_conclusion: >
+    H1 (>3 week halt) is consistent — supplier estimates 6-8 weeks, logistics
+    constraints confirm no fast alternative, and the STM alternative requires
+    8-12 weeks validation. H2 (typhoon/TSA root cause) is strongly consistent
+    — corroborated by NexChip, industry-wide impact confirms it is not OEM-specific.
+    H3 (single-source dependency as systemic risk) is strongly consistent — the
+    competitive data (Tesla/BYD hold 90-day buffers vs our 30-day) directly
+    validates this claim. H4 (spot market at 420% is optimal) is inconsistent
+    — quality cannot be guaranteed, and the STM alternative is viable at 8-12 weeks,
+    making spot market the worst long-term option.
+  method_note: >
+    H1-H3 are factual claims that should score consistent across all three policies
+    given the quality of corroborating evidence. H4 is the decision hypothesis and
+    the most analytically interesting — the evidence supports that it is NOT optimal.
+    A policy that scores H4 as consistent has failed to integrate the engineering
+    assessment (STM alternative viable) and quality risk (authenticity unguaranteed).
+  claims:
+    - id: H1
+      short_text: "production halt exceeds 3 weeks"
+      expected_verdict: consistent
+      expected_score_range: [0.4, 0.9]
+      eliminated: false
+      is_surviving_hypothesis: true
+      rationale: >
+        NexChip estimates 6-8 weeks disruption; no logistics path delivers in
+        under 3 weeks (air freight booked through Oct 20, sea freight 28 days).
+        STM alternative requires 8-12 weeks validation. All three evidence
+        streams converge on >3 weeks.
+      expected_worst_cell_range: [-0.1, 1.0]
+      expected_decisive_inconsistency_count_min: 0
+
+    - id: H2
+      short_text: "typhoon damage to TSA Hsinchu fab is root cause"
+      expected_verdict: consistent
+      expected_score_range: [0.5, 0.9]
+      eliminated: false
+      rationale: >
+        Directly confirmed by NexChip force majeure declaration. Industry-wide
+        impact (BMW, Stellantis, Hyundai all activating emergency protocols)
+        rules out OEM-specific procurement failure as alternative explanation.
+      expected_worst_cell_range: [-0.1, 1.0]
+      expected_decisive_inconsistency_count_min: 0
+
+    - id: H3
+      short_text: "single-source dependency on NexChip is systemic strategic risk"
+      expected_verdict: consistent
+      expected_score_range: [0.5, 0.9]
+      eliminated: false
+      rationale: >
+        Competitor buffer stock data (90 days vs our 30 days) is direct
+        validation evidence. The current crisis is exactly the event that
+        risk policies are designed to prevent. No counter-evidence exists.
+      expected_worst_cell_range: [-0.1, 1.0]
+      expected_decisive_inconsistency_count_min: 0
+
+    - id: H4
+      short_text: "spot market at 420% premium is optimal short-term response"
+      expected_verdict: inconsistent
+      expected_score_range: [-0.6, -0.1]
+      eliminated: false
+      rationale: >
+        Engineering confirms quality and authenticity cannot be guaranteed
+        for spot market stock. STM alternative is viable in 8-12 weeks —
+        within the disruption window — making it preferable to unverified
+        spot stock that could cause downstream warranty/safety issues.
+        Spot market is the worst risk-adjusted option, not the best.
+      expected_worst_cell_range: [-1.0, -0.4]
+      expected_decisive_inconsistency_count_min: 1
+
+episodes:
+  - content: >
+      Procurement alert (2024-10-01): Inventory of BMS-MCU-32 microcontrollers at
+      Stuttgart assembly plant has fallen to 4.2 days of production supply, below
+      the critical threshold of 7 days. Current run rate supports 1,840 vehicles/day.
+      Estimated production stoppage if no replenishment: 2024-10-05.
+    source_type: DATA_FEED
+    credibility: 1.0
+    metadata: {source: ERP_system, plant: Stuttgart, component: BMS-MCU-32}
+
+  - content: >
+      Supplier communication (2024-10-02): Tier-1 supplier NexChip GmbH confirms
+      force majeure event at their primary Tier-2 wafer supplier, Taiwan Semiconductor
+      Advanced (TSA), following typhoon damage to their Hsinchu fab on 2024-09-28.
+      NexChip estimates 6-8 week production interruption. They are exploring alternative
+      wafer sourcing from Samsung's Austin facility.
+    source_type: CONTEXT
+    credibility: 0.88
+    metadata: {source: supplier_comms, supplier: NexChip_GmbH, contact: procurement_director}
+
+  - content: >
+      Market intelligence (2024-10-03): Industry analyst firm Gartner reports that
+      three other automotive OEMs (BMW, Stellantis, Hyundai) have also activated
+      supply chain emergency protocols for BMS microcontrollers in the same week,
+      confirming that the disruption is industry-wide, not OEM-specific.
+    source_type: RESEARCH_PAPER
+    credibility: 0.82
+    metadata: {source: Gartner_flash_note, date: "2024-10-03"}
+
+  - content: >
+      Logistics intelligence (2024-10-04): Air freight spot rates for semiconductor
+      shipments on the Taipei-Frankfurt corridor have risen 340% week-on-week.
+      Freight forwarder DHL Resilience360 reports all priority cargo slots are booked
+      through 2024-10-20. Sea freight alternative requires 28-day transit, exceeding
+      production restart timeline.
+    source_type: DATA_FEED
+    credibility: 0.90
+    metadata: {source: DHL_R360, date: "2024-10-04"}
+
+  - content: >
+      Geopolitical assessment (2024-10-05): Taiwan Strait tensions have escalated
+      following PRC naval exercises announced on 2024-10-04. Insurance consortium
+      Lloyd's has raised war-risk premiums for Taiwan Strait cargo by 180 basis points.
+      Analyst consensus at JPMorgan forecasts 6-month elevated geopolitical risk for
+      Taiwan-sourced semiconductors.
+    source_type: EXPERT_OPINION
+    credibility: 0.75
+    metadata: {source: JPMorgan_geo_risk, date: "2024-10-05"}
+
+  - content: >
+      Competitor intelligence (2024-10-06): Tesla and BYD both hold 90+ day buffer
+      stocks of BMS microcontrollers, established following 2021 chip shortage lessons.
+      Our OEM's procurement policy only requires 30-day buffer. Competitor advantage
+      in current crisis is estimated at 60 days of uninterrupted production.
+    source_type: EXPERT_OPINION
+    credibility: 0.78
+    metadata: {source: competitive_intel, confidence: medium}
+
+  - content: >
+      Alternative sourcing assessment (2024-10-07): Engineering team confirms that
+      alternative MCU from STMicroelectronics (STM32G series) is pin-compatible with
+      BMS-MCU-32 but requires firmware validation. Estimated validation timeline:
+      8-12 weeks. Spot market inventory of BMS-MCU-32 from broker networks available
+      at 420% normal cost; authenticity and quality cannot be guaranteed.
+    source_type: CONTEXT
+    credibility: 0.93
+    metadata: {source: internal_engineering, date: "2024-10-07"}
+
+  - content: >
+      Financial exposure estimate (2024-10-08): CFO office estimates: each day of
+      production stoppage costs €18.4M in lost revenue and €4.2M in fixed cost
+      absorption. A 3-week stoppage would cost approximately €490M gross. Supplier
+      contract clause 14.3 limits NexChip liability to €12M total. Insurance claim
+      under business interruption policy is possible but 90-day waiting period applies.
+    source_type: CONTEXT
+    credibility: 0.97
+    metadata: {source: CFO_office, date: "2024-10-08", classification: CONFIDENTIAL}
+
+claims:
+  - text: "Production at the Stuttgart plant will be halted for more than 3 weeks"
+    claim_type: persistent
+    context_summary: >
+      Given current inventory levels, supplier disruption timeline, and logistics
+      constraints, estimating production stoppage duration.
+
+  - text: "The root cause of this shortage is the typhoon damage to TSA's Hsinchu fab"
+    claim_type: persistent
+    context_summary: >
+      Whether natural disaster at the Tier-2 supplier is the primary cause or whether
+      geopolitical risk, demand spike, or internal procurement failures also contributed.
+
+  - text: "Our company's single-source dependency on NexChip GmbH represents a systemic strategic risk"
+    claim_type: persistent
+    context_summary: >
+      Whether current procurement policy and supplier diversification strategy is
+      adequate for future supply chain resilience.
+
+  - text: "Purchasing spot-market BMS-MCU-32 inventory at 420% cost premium is the optimal short-term response"
+    claim_type: persistent
+    context_summary: >
+      Cost-benefit assessment of spot market purchase versus production stoppage
+      versus accelerating alternative component validation.

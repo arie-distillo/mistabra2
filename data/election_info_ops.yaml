@@ -1,0 +1,192 @@
+---
+name: "Election Integrity Assessment — Geopolitical / Information Operations"
+domain: geopolitical_risk
+description: >
+  An election security task force is assessing evidence of potential foreign
+  information operations targeting a parliamentary election in a NATO member state.
+  Multiple intelligence streams are being fused to assess actor identity, methods,
+  and impact on public opinion.
+
+analytical_context: >
+  Election integrity assessment, geopolitical information operations context.
+  SIGINT and network-forensic evidence is highest credibility.
+  Social media analysis and polling data are objective but require causal
+  inference that the model should treat with appropriate caution.
+  Journalistic sources are credible but represent secondary reporting.
+  Domestic political actor links require strong positive evidence — correlation
+  with amplification patterns is not sufficient to establish active collusion.
+
+ground_truth:
+  ach_conclusion: >
+    H1 (Russian state direction) is the surviving attribution hypothesis with
+    moderate-high confidence. H2 (predominantly fabricated content) is partially
+    undermined — the counter-narrative confirms authentic elements exist, making
+    it a mixed hack-and-leak operation rather than pure fabrication. H3 (material
+    electoral impact) has ambiguous support — polling shifts correlate but causality
+    is not established. H4 (domestic collusion) has weak support: links exist but
+    active coordination is not confirmed by available evidence.
+  method_note: >
+    This scenario tests graded confidence where no hypothesis is cleanly eliminated.
+    Correct ACH scoring requires distinguishing between "insufficient evidence to
+    confirm" (not_applicable) and "evidence actively contradicts" (inconsistent).
+    H4 in particular should score not_applicable, not inconsistent.
+  claims:
+    - id: H1
+      short_text: "Russian state actor (FSB/GRU) direction"
+      expected_verdict: consistent
+      expected_score_range: [0.3, 0.7]
+      eliminated: false
+      is_surviving_hypothesis: true
+      rationale: >
+        SIGINT attribution, coordinated posting patterns, and infrastructure
+        linking to prior FSB-attributed operations converge. Confidence is
+        MODERATE, not high, due to indirect nature of technical evidence.
+      expected_worst_cell_range: [-0.2, 1.0]
+      expected_decisive_inconsistency_count_min: 0
+
+    - id: H2
+      short_text: "predominantly fabricated document cache"
+      expected_verdict: not_applicable
+      expected_score_range: [-0.2, 0.3]
+      eliminated: false
+      rationale: >
+        The counter-narrative confirms authentic elements alongside fabrications.
+        "Predominantly fabricated" is undermined; the correct characterisation
+        is a mixed operation. Should score near zero or weakly inconsistent.
+      expected_worst_cell_range: [-0.4, 1.0]
+      expected_decisive_inconsistency_count_min: 0
+
+    - id: H3
+      short_text: "material electoral impact / integrity risk"
+      expected_verdict: weakly_consistent
+      expected_score_range: [0.0, 0.4]
+      eliminated: false
+      rationale: >
+        Polling shifts and low corrective-reach data support impact, but
+        causality is not established. Weakly consistent is the appropriate
+        verdict — not_applicable understates the correlation evidence.
+      expected_worst_cell_range: [-0.2, 1.0]
+      expected_decisive_inconsistency_count_min: 0
+
+    - id: H4
+      short_text: "domestic political actor collusion"
+      expected_verdict: not_applicable
+      expected_score_range: [-0.1, 0.2]
+      eliminated: false
+      rationale: >
+        PR consultancy links and amplification behaviour are circumstantial.
+        No evidence of active coordination or direction. Not_applicable is
+        correct — should not be scored as inconsistent.
+      expected_worst_cell_range: [-0.3, 1.0]
+      expected_decisive_inconsistency_count_min: 0
+
+episodes:
+  - content: >
+      OSINT — Social media analysis (2024-03-05): Network analysis of 14,200 Twitter/X
+      accounts amplifying anti-NATO content related to the upcoming election shows 67%
+      of accounts were created within the past 90 days. Median follower count: 12.
+      Coordinated inauthentic behaviour patterns identified: simultaneous posting windows
+      between 02:00-04:00 local time, shared IP netblocks traced to hosting providers
+      in Kyiv and Minsk (likely VPN exit nodes).
+    source_type: DATA_FEED
+    credibility: 0.82
+    metadata: {source: social_media_analysis, analyst: EU_DisinfoLab, date: "2024-03-05"}
+
+  - content: >
+      SIGINT (classified summary, 2024-03-08): Signals intelligence indicates
+      communication traffic between accounts consistent with coordinated campaign
+      management, originating from infrastructure with prior attribution to a threat
+      actor group linked to Russian Federal Security Service (FSB). CONFIDENCE: MODERATE.
+      Full technical indicators withheld from this summary.
+    source_type: CONTEXT
+    credibility: 0.80
+    metadata: {source: SIGINT, classification: SECRET//REL NATO, confidence: MODERATE}
+
+  - content: >
+      Leaked document analysis (2024-03-12): A cache of 2,400 emails purportedly from
+      the incumbent Prime Minister's office was posted on a dark web forum and rapidly
+      amplified by Russian state media RT and Sputnik. Forensic metadata analysis by
+      Bellingcat and CitizenLab finds document creation timestamps inconsistent with
+      stated dates; font metadata suggests creation on Windows systems with Russian
+      language pack. 3 of 12 documents contain fabricated content confirmed by
+      independent verification of cited events.
+    source_type: RESEARCH_PAPER
+    credibility: 0.88
+    metadata: {source: forensic_analysis, orgs: [Bellingcat, CitizenLab], date: "2024-03-12"}
+
+  - content: >
+      Polling data (2024-03-15): National opinion polling shows incumbent party
+      approval has declined 8 percentage points over 3 weeks since the document leak.
+      The decline is concentrated in the 18-34 demographic and rural areas with higher
+      social media consumption. Comparable democracies without equivalent leak events
+      show stable polling for their incumbent parties over the same period.
+    source_type: DATA_FEED
+    credibility: 0.75
+    metadata: {source: national_polling, pollster: IPSOS, date: "2024-03-15"}
+
+  - content: >
+      Alternative attribution: Independent cybersecurity firm Mandiant's preliminary
+      assessment (2024-03-17) suggests the technical infrastructure used overlaps with
+      a financially-motivated criminal group that sells "influence-as-a-service" to
+      multiple clients, not exclusively to state actors. The group (tracked as UNC4198)
+      has previously conducted operations on behalf of domestic political actors in
+      Eastern European states.
+    source_type: EXPERT_OPINION
+    credibility: 0.83
+    metadata: {source: Mandiant_advisory, date: "2024-03-17", confidence: LOW-MODERATE}
+
+  - content: >
+      Domestic actor intelligence (2024-03-19): Opposition party's digital strategy
+      firm was founded by a principal who previously worked for a known Russian
+      state-media affiliated PR consultancy until 2021. No direct evidence of current
+      coordination, but financial relationships have not been fully audited. Opposition
+      party denied any knowledge of or involvement in the document leak.
+    source_type: HUMINT
+    credibility: 0.58
+    metadata: {source: HUMINT_financial_intel, reliability: C-3, date: "2024-03-19"}
+
+  - content: >
+      Media ecosystem analysis (2024-03-21): Content propagation analysis by Reuters
+      Institute shows the leaked documents achieved mainstream media coverage in 6 of
+      7 national newspapers within 18 hours, despite their unverified status. Only
+      1 outlet added prominent verification caveats. Average story read time suggests
+      headline-only consumption in 78% of cases. Corrective reporting (when documents
+      were partially debunked) reached estimated 12% of original audience.
+    source_type: RESEARCH_PAPER
+    credibility: 0.80
+    metadata: {source: Reuters_Institute, date: "2024-03-21"}
+
+  - content: >
+      Counter-narrative: An investigative journalist at a domestic newspaper has
+      published evidence that the leaked documents — while containing some fabrications
+      — also include authentic correspondence (confirmed by three independent sources
+      close to the PM's office) showing government officials discussed suppressing
+      an economic report. The authentic portions have attracted significant public interest.
+    source_type: NEWS
+    credibility: 0.70
+    metadata: {source: domestic_journalism, outlet: NationalObserver, date: "2024-03-23"}
+
+claims:
+  - text: "The disinformation campaign is directed or funded by a Russian state actor (FSB or GRU affiliated)"
+    claim_type: persistent
+    context_summary: >
+      Core attribution hypothesis — whether the technical infrastructure, content,
+      and amplification patterns are consistent with Russian state-sponsored influence operation.
+
+  - text: "The leaked document cache contains predominantly fabricated or manipulated content"
+    claim_type: persistent
+    context_summary: >
+      Assessment of document authenticity — whether the leak is primarily disinformation
+      or contains genuine authentic material alongside fabrications (a 'hack and leak' operation).
+
+  - text: "The information operation has materially altered public opinion and poses a significant risk to election integrity"
+    claim_type: persistent
+    context_summary: >
+      Whether the observed polling shifts are causally attributable to the operation
+      and whether the magnitude is sufficient to affect electoral outcomes.
+
+  - text: "Domestic political actors are actively colluding with or facilitating the foreign information operation"
+    claim_type: persistent
+    context_summary: >
+      Whether the opposition party's connections to Russian-linked PR consultancy
+      and their amplification of leaked content constitutes active coordination.

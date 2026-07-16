@@ -1,0 +1,272 @@
+---
+name: "The Burnt Bread — Classic ACH Teaching Scenario"
+domain: operational_quality
+description: >
+  A bakery in Munich discovers that a significant proportion of its bread is
+  emerging burnt from the night-shift ovens. The problem started two weeks ago
+  and is confined to the 22:00–06:00 shift. Four competing hypotheses are assessed
+  against a body of documentary, forensic, and witness evidence.
+
+  This scenario is a direct adaptation of the classic "bakery" example used in
+  Richards Heuer's Analysis of Competing Hypotheses (ACH) training materials
+  (Psychology of Intelligence Analysis, CIA Sherman Kent School, 1999).
+  It is intentionally designed so that:
+    - H1 (oven malfunction) accumulates several inconsistencies
+    - H2 (baker error) is weakly supported but survives elimination
+    - H3 (deliberate sabotage) appears plausible until exculpatory evidence arrives
+    - H4 (flour defect) is progressively eliminated by independent data
+
+  A correct ACH conclusion should converge on H2 as the surviving hypothesis
+  — not because it has the strongest positive support, but because it has the
+  fewest decisive inconsistencies.
+
+analytical_context: >
+  Operational quality failure investigation at a Munich bakery.
+  Physical evidence (oven telemetry, lab analysis) is high-credibility.
+  CCTV footage is objective and near-definitive for the conduct it captures.
+  Testimonial and HR evidence is lower-credibility and subject to recall bias.
+  The problem is confined to the night shift only; day-shift evidence that
+  contradicts a hypothesis is highly discriminating.
+
+ground_truth:
+  ach_conclusion: >
+    H2 (baker error — Hofer's failure to monitor bake times) is the surviving
+    hypothesis. It is not strongly confirmed by positive evidence, but it has
+    the fewest decisive inconsistencies of the four hypotheses. H3 and H4 are
+    eliminated. H1 also accumulates a decisive inconsistency (telemetry directly
+    contradicts an undetected malfunction) and is an elimination candidate, but
+    retains residual uncertainty from the uncalibrated probe.
+  method_note: >
+    ACH reaches conclusions by elimination of inconsistencies, not accumulation
+    of support. expected_verdict reflects ACH-correct logic: worst_cell drives
+    the verdict when a decisive inconsistency exists. expected_score_range
+    reflects the Bayesian mean, validated separately. Both tracks must be
+    assessed to fully evaluate a policy's ACH fidelity.
+  claims:
+    - id: H1
+      short_text: "thermostat / sensor malfunction"
+      expected_verdict: inconsistent
+      expected_score_range: [-0.2, 0.3]
+      eliminated: true
+      expected_worst_cell_range: [-1.0, -0.4]
+      expected_decisive_inconsistency_count_min: 1
+      rationale: >
+        Oven telemetry showing stable temperatures (±2°C) with no fault codes
+        is a decisive inconsistency for a malfunction claim — if the thermostat
+        were malfunctioning, sensors would show it. Camera footage also contradicts
+        the mechanism. worst_cell should be ≤ -0.5, triggering ACH elimination.
+        Despite the uncalibrated probe introducing residual uncertainty, H1 should
+        be flagged as an elimination candidate.
+
+    - id: H2
+      short_text: "baker error (Hofer, failure to monitor bake times)"
+      expected_verdict: weakly_consistent
+      expected_score_range: [0.1, 0.5]
+      eliminated: false
+      is_surviving_hypothesis: true
+      expected_worst_cell_range: [-0.49, 0.0]
+      expected_decisive_inconsistency_count_min: 0
+      rationale: >
+        CCTV footage directly confirms the mechanism: Hofer loaded loaves and
+        left without setting a timer, on two consecutive nights. No evidence
+        directly contradicts this hypothesis — the worst cell should stay above
+        the decisive inconsistency threshold (-0.5). Survives elimination as the
+        hypothesis with fewest decisive inconsistencies.
+
+    - id: H3
+      short_text: "deliberate sabotage"
+      expected_verdict: highly_inconsistent
+      expected_score_range: [-1.0, -0.3]
+      eliminated: true
+      expected_worst_cell_range: [-1.0, -0.5]
+      expected_decisive_inconsistency_count_min: 1
+      rationale: >
+        The counter-indicator analysis is decisive: a deliberate actor would
+        alter oven settings or introduce a contaminant — neither is observed.
+        Camera footage shows inattention, not deliberate concealment. worst_cell
+        should be at or near -1.0 for the counter-indicator chunk.
+
+    - id: H4
+      short_text: "flour quality defect (Goldfields Mühle)"
+      expected_verdict: highly_inconsistent
+      expected_score_range: [-0.6, -0.1]
+      eliminated: true
+      expected_worst_cell_range: [-1.0, -0.5]
+      expected_decisive_inconsistency_count_min: 1
+      rationale: >
+        Lab analysis (all parameters within specification) and cross-bakery
+        inquiry (four bakeries using same batch, no issues) are independently
+        decisive. Both should score ≤ -0.5 for the flour claim, making this
+        a clear ACH elimination. expected_verdict updated from inconsistent to
+        highly_inconsistent to reflect ACH-correct verdict derivation from worst_cell.
+
+episodes:
+
+  - content: >
+      Quality Control log, Wednesday 06:15: Night-shift supervisor Helga Bauer
+      conducted end-of-shift inspection and recorded that 34 of 96 loaves from
+      oven #1, 29 of 96 from oven #2, and 31 of 96 from oven #3 exhibited
+      characteristic surface charring (Verbrennungsgrad 3–4 on the DIN scale).
+      Identical results were logged for Tuesday night. Daytime and afternoon
+      shifts on both days produced zero defective loaves using the same ovens.
+    source_type: CONTEXT
+    credibility: 0.95
+    metadata: {source: QC_log, recorder: H_Bauer, shift: night, dates: [2024-11-19, 2024-11-20]}
+
+  - content: >
+      Oven telemetry export, Tuesday and Wednesday nights: Digital temperature
+      sensors on all three ovens recorded internal temperatures continuously at
+      30-second intervals. Logged values deviated from programmed set-points
+      (220°C for standard loaf) by no more than ±2°C throughout both shifts.
+      No sensor fault codes were raised. The temperature controller firmware
+      version is current (v4.2.1, updated October 2024).
+    source_type: DATA_FEED
+    credibility: 0.92
+    metadata: {source: oven_telemetry, system: BakerControl-Pro, nights: [2024-11-19, 2024-11-20]}
+
+  - content: >
+      Maintenance log entry (Monday 08:30): The thermostat probe in oven #2 was
+      replaced following a routine preventive maintenance schedule. The work order
+      shows the replacement was completed, but the recalibration sign-off field
+      (Kalibrierungsbestätigung) is left blank. The technician's signature is
+      present on the work-completion line but not on the post-calibration
+      verification line, which requires a separate independent witness.
+    source_type: CONTEXT
+    credibility: 0.90
+    metadata: {source: maintenance_log, technician: R_Gruber, date: 2024-11-18, oven: "#2"}
+
+  - content: >
+      Night baker Jens Hofer's certification and employment record: Hofer
+      completed his Bäckermeister qualification three months ago with a composite
+      score of 94/100, ranking second in his cohort. His employment file contains
+      no prior quality incidents, no written warnings, and consistently positive
+      quarterly performance evaluations. He has worked the night shift alone for
+      four months.
+    source_type: CONTEXT
+    credibility: 0.87
+    metadata: {source: HR_records, employee: J_Hofer, reviewed_by: HR_department}
+
+  - content: >
+      Supplier change record: The bakery switched its primary flour supplier from
+      Bayerische Mühlenwerke to Goldfields Mühle GmbH on 4 November 2024 — exactly
+      two weeks before the first burnt-loaf reports. The switch was driven by a
+      12% cost reduction. Goldfields Mühle is an ISO 9001-certified supplier with
+      ten years of industry operation and no publicly recorded quality incidents.
+    source_type: CONTEXT
+    credibility: 0.85
+    metadata: {source: procurement_record, decision_date: 2024-11-04, approval: owner}
+
+  - content: >
+      Cross-bakery inquiry (telephone interviews, Thursday): The bakery owner
+      contacted four other Munich bakeries known to source from Goldfields Mühle.
+      All four confirmed they are using flour from the same November delivery batch
+      (batch code GM-2024-1103) and report no quality abnormalities, no unusual
+      burning, and no customer complaints.
+    source_type: EXPERT_OPINION
+    credibility: 0.82
+    metadata: {source: peer_bakery_interviews, n_bakeries: 4, date: 2024-11-21}
+
+  - content: >
+      Laboratory analysis report (Thursday, external food-science lab): A 500g
+      sample of Goldfields Mühle flour (batch GM-2024-1103) was submitted for
+      independent analysis. Results: protein content 11.8% (specification 11.5–12.5%),
+      moisture 13.1% (specification 12.5–14.0%), ash content 0.54% (specification
+      0.40–0.60%), Falling Number 298 seconds (specification ≥220s). All parameters
+      within normal range. No enzyme abnormalities detected.
+    source_type: RESEARCH_PAPER
+    credibility: 0.93
+    metadata: {source: external_lab, lab: München Lebensmittelanalytik GmbH, date: 2024-11-21}
+
+  - content: >
+      Personnel file addendum: Three weeks ago, bakery owner Franz Schreiber
+      appointed day-shift baker Maria Klein to the newly created Shift Supervisor
+      role, bypassing Hofer who had verbally expressed interest. Two colleagues
+      report that Hofer described the decision as "unfair" in the break room.
+      Hofer did not file a formal grievance. He has not requested a transfer or
+      resignation.
+    source_type: HUMINT
+    credibility: 0.65
+    metadata: {source: colleague_witness_statements, witnesses: 2, reliability_note: informal_recollection}
+
+  - content: >
+      Security camera review, Tuesday night (footage timestamp 23:14–23:36):
+      Camera 3 (oven room, continuous recording) shows Hofer loading 96 loaves
+      into oven #1 at 23:14. He is observed returning to the oven room at 23:36
+      — 22 minutes later — at which point he opens the oven door, observes the
+      loaves, and immediately extracts them. No timer device is visible being set
+      before he left the room. Hofer spends the intervening 22 minutes in the
+      storage area; footage shows no interaction with ovens #2 or #3 during this
+      period. Identical timer-omission behaviour is visible on the Wednesday night
+      footage.
+    source_type: CONTEXT
+    credibility: 0.94
+    metadata: {source: CCTV_footage, camera: 3, reviewed_by: owner, dates: [2024-11-19, 2024-11-20]}
+
+  - content: >
+      Recipe card and production log audit: Recipe cards used during the night
+      shift specify oven temperature (220°C) and charge weight (800g per loaf)
+      but do not include a timer step or required bake-time field. The production
+      log for both nights shows Hofer's temperature sign-offs as correct. The
+      bakery's production manager confirms that "timer discipline" is an informal
+      practice established by long-serving daytime bakers and has never been
+      formalised in the written procedure. Night-shift training records do not
+      include a module on timer management.
+    source_type: CONTEXT
+    credibility: 0.89
+    metadata: {source: recipe_cards_and_training_records, reviewed_by: production_manager}
+
+  - content: >
+      Counter-indicator to sabotage hypothesis: If Hofer intended to sabotage
+      production, the simplest method would be to alter oven temperature settings
+      or introduce a contaminant — neither of which is consistent with the
+      observed telemetry (temperatures normal) or the flour analysis (no
+      contamination). The observed behaviour (leaving the oven unattended, no
+      timer set) is consistent with inattention but not with a deliberate act
+      designed to damage product while avoiding detection. A deliberate actor
+      would be unlikely to repeat the identical observable behaviour on camera
+      on two consecutive nights.
+    source_type: EXPERT_OPINION
+    credibility: 0.75
+    metadata: {source: investigator_assessment, analyst: production_manager + owner, date: 2024-11-22}
+
+claims:
+
+  - text: >
+      The burnt bread is caused by a thermostat or sensor malfunction in one or
+      more of the bakery's ovens
+    claim_type: persistent
+    context_summary: >
+      Oven hardware failure hypothesis — the ovens are delivering higher temperatures
+      than their programmed set-points despite the sensors reporting normal values,
+      possibly due to a miscalibrated thermostat or a faulty probe following
+      recent maintenance.
+
+  - text: >
+      The burnt bread is caused by baker error on the night shift — specifically,
+      Jens Hofer's failure to monitor bake times and remove loaves at the correct moment
+    claim_type: persistent
+    context_summary: >
+      Operational error hypothesis — the night baker is leaving loaves in the oven
+      beyond the appropriate bake time, either through distraction, poor training,
+      or absence of a written timer procedure, without any deliberate intent.
+
+  - text: >
+      The burnt bread is the result of deliberate sabotage by a disgruntled
+      employee seeking to damage the bakery's reputation or output
+    claim_type: persistent
+    context_summary: >
+      Insider sabotage hypothesis — a motivated employee (most likely Hofer given
+      the known grievance over the promotion decision) is intentionally causing
+      the quality failures, possibly by manipulating the baking process in ways
+      not captured by automated telemetry.
+
+  - text: >
+      The burnt bread is caused by a quality defect in the flour batch recently
+      supplied by Goldfields Mühle GmbH, which alters the browning characteristics
+      of the dough
+    claim_type: persistent
+    context_summary: >
+      Ingredient defect hypothesis — the new flour supplier's product has abnormal
+      properties (sugar content, enzyme activity, or moisture variation) that cause
+      the Maillard reaction and caramelisation to proceed faster, resulting in
+      surface charring at standard oven temperatures and bake times.

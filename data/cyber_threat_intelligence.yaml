@@ -1,0 +1,181 @@
+---
+name: "APT Campaign Attribution — Cyber Threat Intelligence"
+domain: cybersecurity
+description: >
+  A suspected advanced persistent threat (APT) has been targeting financial sector
+  organisations. Multiple intelligence feeds are being evaluated to determine attribution
+  and intent. Analysts must assess competing hypotheses about actor identity and goals.
+
+analytical_context: >
+  Cyber threat attribution investigation, financial sector targeting.
+  SIGINT and forensic evidence is highest-credibility; OSINT and HUMINT
+  from forum sources is lower-credibility and requires corroboration.
+  Code similarity evidence is technically objective but attribution inference
+  from it carries inherent uncertainty. The false-flag hypothesis should be
+  assessed against whether the level of TTP mimicry requires insider knowledge
+  of the attributed actor's tooling.
+
+ground_truth:
+  ach_conclusion: >
+    H1 (Lazarus Group / DPRK) is the primary surviving attribution hypothesis,
+    supported by converging technical evidence. H2 (financial/crypto motivation)
+    is well-supported and not in competition with H1. H3 (insider access) has
+    moderate support from the spear-phishing specificity. H4 (false-flag) is
+    possible but the weight of independent corroborating evidence makes it
+    unlikely — it would require an actor with detailed knowledge of Lazarus tooling.
+  method_note: >
+    This scenario tests ACH in an attribution context where multiple hypotheses
+    can be simultaneously true (e.g. H1 and H2 are compatible). Policies should
+    score each independently. H4 is the key discriminating hypothesis — strong
+    evidence for H1 is simultaneously evidence against H4, which a contrastive
+    policy should detect.
+  claims:
+    - id: H1
+      short_text: "Lazarus Group (DPRK-nexus) attribution"
+      expected_verdict: consistent
+      expected_score_range: [0.4, 0.9]
+      eliminated: false
+      is_surviving_hypothesis: true
+      expected_worst_cell_range: [-0.2, 1.0]
+      expected_decisive_inconsistency_count_min: 0
+      rationale: >
+        Code similarity (73%), AES-256 key match to documented Lazarus samples,
+        GCHQ moderate-confidence attribution, and blockchain tracing to DPRK
+        wallets all converge. The counter-indicator (IP reuse by criminal group)
+        introduces uncertainty but does not outweigh four independent lines.
+
+    - id: H2
+      short_text: "financial theft / cryptocurrency motivation"
+      expected_verdict: consistent
+      expected_score_range: [0.4, 0.8]
+      eliminated: false
+      expected_worst_cell_range: [-0.1, 1.0]
+      expected_decisive_inconsistency_count_min: 0
+      rationale: >
+        Blockchain analysis directly confirms funds flow to DPRK-controlled
+        accounts; targeting of crypto exchanges is consistent with this motive.
+        Not in competition with H1 — both can be true simultaneously.
+
+    - id: H3
+      short_text: "insider access / human intelligence within target"
+      expected_verdict: weakly_consistent
+      expected_score_range: [0.1, 0.5]
+      eliminated: false
+      expected_worst_cell_range: [-0.3, 1.0]
+      expected_decisive_inconsistency_count_min: 0
+      rationale: >
+        Use of internal project codenames in spear-phishing is highly specific
+        and supports prior access or human source. However the evidence is
+        limited to one instance and does not confirm the mechanism of access.
+
+    - id: H4
+      short_text: "deliberate false-flag operation"
+      expected_verdict: not_applicable
+      expected_score_range: [-0.2, 0.2]
+      eliminated: false
+      expected_worst_cell_range: [-0.5, 1.0]
+      expected_decisive_inconsistency_count_min: 0
+      rationale: >
+        The IP reuse counter-indicator raises this hypothesis but the specificity
+        of AES-256 key matches and mutex strings argues against it (would require
+        Lazarus tooling access). Evidence is genuinely ambiguous — not_applicable
+        is correct and no decisive inconsistency should exist for this hypothesis.
+
+episodes:
+  - content: >
+      SIGINT intercept dated 2024-11-03: Command-and-control traffic observed originating
+      from IP range 185.220.x.x, known to be associated with bulletproof hosting
+      providers in Eastern Europe. Traffic uses custom binary protocol over port 8443.
+    source_type: CONTEXT
+    credibility: 0.85
+    metadata: {source: SIGINT, date: "2024-11-03", classification: SECRET}
+
+  - content: >
+      HUMINT report from financial sector ISAC (2024-11-05): A senior security engineer
+      at a major European bank reports receiving a highly targeted spear-phishing email
+      purporting to be from SWIFT. The lure document contained references to legitimate
+      internal project codenames suggesting insider knowledge or prior compromise.
+    source_type: CONTEXT
+    credibility: 0.78
+    metadata: {source: HUMINT, reporter: FS-ISAC, date: "2024-11-05"}
+
+  - content: >
+      OSINT — Threat intel blog post (2024-11-07): Malware sample (SHA256: a3f1…c9e2)
+      uploaded to VirusTotal shares 73% code similarity with Lazarus Group tools
+      documented in US-CERT advisory AA20-239A. Specific mutex strings and obfuscation
+      routines are near-identical.
+    source_type: NEWS
+    credibility: 0.72
+    metadata: {source: OSINT, analyst: "security_researcher_handle", date: "2024-11-07"}
+
+  - content: >
+      Partner Intelligence (Five Eyes advisory draft, 2024-11-09): GCHQ assessment
+      concludes with MODERATE CONFIDENCE that the TTPs observed are consistent with
+      a nation-state actor operating under financial motives, specifically cryptocurrency
+      theft to fund sanctioned programs. Attribution to DPRK-nexus actor assessed
+      as LIKELY based on infrastructure overlap with Operation AppleJeus.
+    source_type: EXPERT_OPINION
+    credibility: 0.92
+    metadata: {source: partner_intel, partner: GCHQ, date: "2024-11-09"}
+
+  - content: >
+      Internal forensics (2024-11-10): Memory dump from compromised workstation at
+      target bank reveals loader beacon using AES-256 with hardcoded key matching
+      previously documented Lazarus Group sample from 2023. Persistence via scheduled
+      task disguised as Windows Defender Update. Lateral movement using pass-the-hash
+      against domain controller observed.
+    source_type: CONTEXT
+    credibility: 0.95
+    metadata: {source: internal_forensics, date: "2024-11-10", case: "INC-2024-1107"}
+
+  - content: >
+      OSINT — Blockchain analysis (2024-11-11): Funds from a prior intrusion at a
+      Singapore crypto exchange traced to mixing services, then to wallets linked to
+      North Korean state-controlled exchange accounts. Chain of custody established
+      with 89% confidence by two independent blockchain analytics firms.
+    source_type: RESEARCH_PAPER
+    credibility: 0.88
+    metadata: {source: blockchain_analysis, firms: ["Chainalysis", "Elliptic"], date: "2024-11-11"}
+
+  - content: >
+      Counter-indicator (2024-11-12): Romanian CERT reports that two of the observed
+      C2 IP addresses were actively used in an unrelated ransomware campaign attributed
+      to a financially motivated criminal group (not state-sponsored) as recently as
+      October 2024. IP reuse or deliberate false-flag operation cannot be ruled out.
+    source_type: DATA_FEED
+    credibility: 0.80
+    metadata: {source: CERT-RO, date: "2024-11-12"}
+
+  - content: >
+      HUMINT — Closed-source forum intelligence (2024-11-14): A vetted source within
+      an Eastern European cybercriminal forum states that a contract was recently placed
+      for SWIFT reconnaissance tools targeting European banks, with payment in Monero.
+      Source reliability rated B-2 (usually reliable, possibly true).
+    source_type: HUMINT
+    credibility: 0.60
+    metadata: {source: HUMINT_forum, reliability: "B-2", date: "2024-11-14"}
+
+claims:
+  - text: "The threat actor behind this campaign is the Lazarus Group (DPRK-nexus)"
+    claim_type: persistent
+    context_summary: >
+      Multiple technical indicators including code similarity, infrastructure overlap,
+      and blockchain attribution point to DPRK-linked Lazarus Group.
+
+  - text: "The primary objective of this campaign is financial theft, specifically cryptocurrency"
+    claim_type: persistent
+    context_summary: >
+      Pattern of targeting crypto exchanges and use of blockchain mixing services
+      suggest financial motivation.
+
+  - text: "The threat actor has insider access or human intelligence within target organisations"
+    claim_type: persistent
+    context_summary: >
+      Use of internal project codenames in phishing lures suggests prior compromise
+      or human source within target bank.
+
+  - text: "This campaign involves deliberate false-flag operations to obscure true attribution"
+    claim_type: persistent
+    context_summary: >
+      IP reuse by criminal groups and possible deliberate TTP borrowing could indicate
+      false-flag to confuse attribution.

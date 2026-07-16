@@ -1,0 +1,191 @@
+---
+name: "M&A Due Diligence — Corporate Intelligence Assessment"
+domain: corporate_strategy
+description: >
+  A private equity firm (Apex Capital) is conducting pre-LOI due diligence on
+  a potential acquisition target (CloudLogix, a SaaS logistics optimisation company).
+  Multiple intelligence streams are being assessed to validate the investment thesis
+  and identify hidden risks.
+
+analytical_context: >
+  Pre-LOI M&A due diligence, private equity acquisition context.
+  Customer reference data and independent channel checks are high-credibility.
+  Seller-provided data room figures require independent corroboration.
+  The key analytical discipline is distinguishing between "metric is accurate
+  as stated" and "metric is sustainable going forward" — both are live questions
+  in this scenario. Regulatory and competitive intelligence are lower-credibility
+  and require triangulation.
+
+ground_truth:
+  ach_conclusion: >
+    H1 (NRR sustainable) is weakly inconsistent — pricing pressure and competitive
+    threat introduce material doubt about forward sustainability even if the
+    historical figure is accurate. H2 (material RouteAI competitive threat) is
+    weakly-to-moderately consistent. H3 (concealment of negative information) has
+    weak but non-trivial support from the cherry-picked metrics pattern. H4 (fair
+    value at 7x ARR) is inconsistent given identified risks — the evidence does
+    not support the proposed valuation without significant discount.
+  method_note: >
+    This is a prospective assessment scenario — several hypotheses are about
+    future states (sustainability, competitive trajectory). Policies should
+    treat forward-looking claims with wider uncertainty bounds than historical
+    fact claims. H4 is the decision hypothesis and the clearest test: if H1
+    is uncertain and H2 is concerning, H4 should score inconsistent.
+  claims:
+    - id: H1
+      short_text: "118% NRR is sustainable and accurately reflects customer health"
+      expected_verdict: weakly_inconsistent
+      expected_score_range: [-0.4, 0.0]
+      eliminated: false
+      rationale: >
+        2/6 customer references report active price renegotiation; Oracle
+        competitive threat is confirmed. The historical NRR may be accurate
+        but forward sustainability is in material doubt. Weakly inconsistent
+        for the combined accuracy-and-sustainability claim.
+      expected_worst_cell_range: [-0.6, 0.0]
+      expected_decisive_inconsistency_count_min: 0
+
+    - id: H2
+      short_text: "material RouteAI competitive threat within 18 months"
+      expected_verdict: weakly_consistent
+      expected_score_range: [0.1, 0.5]
+      eliminated: false
+      rationale: >
+        Customer references confirm Oracle Logistics Cloud threat; RouteAI
+        specifically is cited with $8M Series B. Evidence is consistent with
+        a real competitive threat but 18-month timeline certainty is high.
+      expected_worst_cell_range: [-0.2, 1.0]
+      expected_decisive_inconsistency_count_min: 0
+
+    - id: H3
+      short_text: "management concealing material negative information"
+      expected_verdict: weakly_consistent
+      expected_score_range: [0.0, 0.4]
+      eliminated: false
+      rationale: >
+        Cherry-picked metrics (NRR without cohort breakdown, no churn data
+        by vintage) are a yellow flag but not proof of intentional concealment.
+        Pattern is consistent with motivated reasoning more than deliberate fraud.
+      expected_worst_cell_range: [-0.2, 1.0]
+      expected_decisive_inconsistency_count_min: 0
+
+    - id: H4
+      short_text: "7x ARR / $296M represents fair value given identified risks"
+      expected_verdict: inconsistent
+      expected_score_range: [-0.5, -0.1]
+      eliminated: false
+      rationale: >
+        Given NRR sustainability risk, competitive threat, and concentration
+        (61% in top-10 customers), the evidence does not support full-price
+        valuation. A well-reasoned ACH matrix should surface this as inconsistent.
+      expected_worst_cell_range: [-1.0, -0.3]
+      expected_decisive_inconsistency_count_min: 0
+
+episodes:
+  - content: >
+      Financial data room review (2024-07-10): CloudLogix reported ARR of $42.3M for
+      FY2024, up 67% YoY. Net Revenue Retention (NRR) stated as 118%. Gross margin
+      reported as 74%. Top 10 customers represent 61% of ARR. Customer contracts
+      are predominantly 12-month with auto-renewal; average ACV $284,000.
+    source_type: CONTEXT
+    credibility: 0.88
+    metadata: {source: data_room, document: FY2024_financials, reviewed_by: deal_team}
+
+  - content: >
+      Customer reference checks (2024-07-15): Interviews with 6 of CloudLogix's
+      top 15 customers conducted by independent reference firm AlphaSights.
+      4/6 cited "strong ROI" and "sticky" integration with their WMS/ERP systems.
+      However, 2/6 mentioned ongoing negotiations for price reductions at renewal,
+      citing a new competing product from Oracle Logistics Cloud launched Q1 2024.
+    source_type: EXPERT_OPINION
+    credibility: 0.82
+    metadata: {source: reference_checks, firm: AlphaSights, date: "2024-07-15"}
+
+  - content: >
+      Technical due diligence (2024-07-18): Engineering assessment by third-party
+      firm Bessemer Technical Advisors finds that CloudLogix's ML optimization engine
+      relies on 3 open-source libraries with known security vulnerabilities (CVEs rated
+      High or Critical). Core IP is primarily in the UI/UX and workflow orchestration
+      layers, not the underlying algorithms. Key ML engineer (Dr. Sarah Chen, cited in
+      2 patents) is departing for Google in August 2024.
+    source_type: EXPERT_OPINION
+    credibility: 0.90
+    metadata: {source: tech_DD, firm: Bessemer_Technical, date: "2024-07-18"}
+
+  - content: >
+      HR and talent intelligence (2024-07-20): Glassdoor rating: 3.2/5 over past
+      12 months (declining from 4.1 two years ago). Linkedin analytics show 34%
+      annualised engineering attrition vs industry average of 18%. Three senior
+      engineers departed in Q2 2024; all three joined the same competitor (RouteAI).
+      CEO has not sold any equity in two years; CFO sold 40% of vested shares in
+      January 2024 in a secondary transaction.
+    source_type: DATA_FEED
+    credibility: 0.78
+    metadata: {source: HR_intelligence, date: "2024-07-20"}
+
+  - content: >
+      Competitive landscape (2024-07-22): Gartner Magic Quadrant for Supply Chain
+      Execution (2024 edition) positions CloudLogix as a "Challenger" — strong
+      execution, limited vision. Oracle Logistics Cloud and Blue Yonder are in the
+      Leaders quadrant. A well-funded startup (RouteAI, $85M Series B) is disrupting
+      the mid-market segment CloudLogix dominates, with pricing 30-40% lower.
+    source_type: RESEARCH_PAPER
+    credibility: 0.85
+    metadata: {source: Gartner_MQ, date: "2024-07-22"}
+
+  - content: >
+      Legal due diligence (2024-07-25): Pending patent infringement lawsuit filed
+      by RouteAI against CloudLogix (filed 2024-05-30, USDC Northern District CA).
+      RouteAI alleges CloudLogix's "Dynamic Route Clustering" feature infringes
+      US Patent 11,234,567. CloudLogix counsel rates probability of adverse outcome
+      at 30-40%. Potential damages: $4-7M. Discovery phase has not yet produced
+      CloudLogix's internal development communications.
+    source_type: CONTEXT
+    credibility: 0.85
+    metadata: {source: legal_DD, counsel: Wilson_Sonsini, date: "2024-07-25"}
+
+  - content: >
+      Management interview (2024-07-28): CEO Alex Torres claims NRR "will expand to
+      125%+ in FY2025" driven by new modules launching in H2 2024. When pressed on
+      the Oracle competitive threat, Torres states "customers buy outcomes, and we
+      deliver 18% freight cost reduction on average — Oracle can't match that."
+      CFO unable to provide cohort-level NRR breakdown without "cleaning the data first."
+    source_type: EXPERT_OPINION
+    credibility: 0.55
+    metadata: {source: mgmt_interview, date: "2024-07-28", note: "management is conflicted seller"}
+
+  - content: >
+      Channel intelligence (2024-07-30): Three logistics consultants (independent
+      sources) confirm that CloudLogix has been reducing implementation partner
+      commissions, causing two of their five largest reseller partners to begin
+      recommending RouteAI preferentially. One partner (LogiPartners Inc.) has
+      formally ended its CloudLogix relationship effective Q4 2024.
+    source_type: HUMINT
+    credibility: 0.72
+    metadata: {source: channel_checks, n_sources: 3, date: "2024-07-30"}
+
+claims:
+  - text: "CloudLogix's reported 118% NRR is sustainable and accurately represents underlying customer health"
+    claim_type: persistent
+    context_summary: >
+      Whether NRR is inflated by price increases on sticky customers or genuinely
+      reflects expansion revenue, and whether it will hold given competitive pressure.
+
+  - text: "CloudLogix faces a material competitive threat from RouteAI that could significantly erode market share within 18 months"
+    claim_type: persistent
+    context_summary: >
+      Assessment of competitive intensity and whether CloudLogix's current moat
+      (integrations, workflow depth) is sufficient to retain customers against a
+      lower-priced challenger.
+
+  - text: "The management team is concealing material negative information during the due diligence process"
+    claim_type: persistent
+    context_summary: >
+      Whether the CFO's inability to produce cohort NRR, high insider selling,
+      and vague competitive responses indicate deliberate misrepresentation.
+
+  - text: "The acquisition at the proposed valuation (7x ARR / $296M) represents fair value given identified risks"
+    claim_type: persistent
+    context_summary: >
+      Whether the risk-adjusted investment thesis holds after accounting for
+      competitive threats, talent attrition, tech debt, and legal exposure.

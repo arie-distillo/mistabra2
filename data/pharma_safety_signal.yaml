@@ -1,0 +1,195 @@
+---
+name: "Adverse Event Safety Signal — Pharmaceutical / Clinical"
+domain: pharma_safety
+description: >
+  A post-market surveillance team is investigating an unexpected cluster of
+  hepatotoxicity cases in patients taking a recently approved antiviral medication
+  (DrugX). Multiple hypotheses are being assessed to determine causality,
+  severity of signal, and appropriate regulatory response.
+
+analytical_context: >
+  Post-market drug safety assessment, pharmacovigilance and regulatory context.
+  FDA MedWatch and clinical chart review data are highest-credibility.
+  EMA registry data is high-credibility but note the critical methodology
+  difference: EU data excludes concurrent CYP inhibitor users, which is the
+  key confounder for this investigation. Pre-clinical re-analysis is
+  high-credibility due to company data access. Patient advocacy sources are
+  lowest-credibility. The WHO-UMC causality scale is the appropriate standard
+  for assessing individual case causality.
+
+ground_truth:
+  ach_conclusion: >
+    H1 (causal DILI relationship) is weakly-to-moderately consistent —
+    the signal is real but the denominator (EU data shows no signal) introduces
+    meaningful uncertainty that is resolved by the methodology difference.
+    H2 (CYP2C9 poor metaboliser genotype) and H3 (DDI as primary amplifier)
+    are both well-supported and not mutually exclusive — both mechanisms likely
+    operate. H4 (immediate black box/withdrawal) is inconsistent with the
+    available evidence — FDA's own preliminary opinion is that the threshold
+    is not met and REMS update is appropriate.
+  method_note: >
+    This scenario requires distinguishing between two compatible mechanistic
+    hypotheses (H2 and H3). Both can be simultaneously true. The key ACH
+    test is H4: a policy that correctly reads the regulatory science opinion
+    and EMA data should score H4 as inconsistent, not consistent. Advocacy
+    evidence (H4 support) should be appropriately down-weighted by credibility.
+  claims:
+    - id: H1
+      short_text: "causal DILI relationship above background rate"
+      expected_verdict: weakly_consistent
+      expected_score_range: [0.1, 0.5]
+      eliminated: false
+      rationale: >
+        47 MedWatch cases with 6 "probable" WHO-UMC ratings support causality,
+        but the EU registry (41,000 patients, no signal) creates genuine
+        uncertainty that resolves to weakly_consistent once the methodology
+        difference is accounted for. Pre-clinical re-analysis adds supporting
+        signal.
+      expected_worst_cell_range: [-0.2, 1.0]
+      expected_decisive_inconsistency_count_min: 0
+
+    - id: H2
+      short_text: "CYP2C9 poor metaboliser genotype as primary driver"
+      expected_verdict: weakly_consistent
+      expected_score_range: [0.1, 0.5]
+      eliminated: false
+      rationale: >
+        4/5 genotyped cases carried CYP2C9*3/*3 variant. Strong mechanistic
+        support but small sample size. The EU data (which likely excludes these
+        patients via antifungal exclusion criteria) is consistent with genotype
+        driving risk. Not_applicable understates the evidence.
+      expected_worst_cell_range: [-0.2, 1.0]
+      expected_decisive_inconsistency_count_min: 0
+
+    - id: H3
+      short_text: "DDI with CYP2C9 inhibitors as primary risk amplifier"
+      expected_verdict: weakly_consistent
+      expected_score_range: [0.1, 0.5]
+      eliminated: false
+      rationale: >
+        9/12 DILI cases were co-prescribed strong CYP2C9 inhibitors; EU data
+        excludes these patients and shows no signal. This is strong support for
+        H3. Compatible with H2 — the genotype and DDI mechanisms amplify each
+        other.
+      expected_worst_cell_range: [-0.2, 1.0]
+      expected_decisive_inconsistency_count_min: 0
+
+    - id: H4
+      short_text: "immediate regulatory action (black box/withdrawal) warranted"
+      expected_verdict: inconsistent
+      expected_score_range: [-0.5, -0.1]
+      eliminated: false
+      rationale: >
+        FDA's own preliminary assessment is that the threshold for withdrawal
+        is not met. EMA data shows no signal in 41,000 patients. The signal
+        appears to be confined to a definable risk group. REMS update is the
+        evidence-supported response, not black box or withdrawal.
+      expected_worst_cell_range: [-1.0, -0.4]
+      expected_decisive_inconsistency_count_min: 1
+
+episodes:
+  - content: >
+      Pharmacovigilance report (2024-08-15): FDA MedWatch has received 47 reports
+      of elevated liver enzymes (ALT/AST >3x ULN) in patients taking DrugX within
+      the first 8 weeks post-approval. 6 cases involved ALT/AST >10x ULN (severe
+      hepatotoxicity by DILI criteria). 2 cases required hospitalisation.
+    source_type: DATA_FEED
+    credibility: 0.95
+    metadata: {source: FDA_MedWatch, date: "2024-08-15", cases: 47}
+
+  - content: >
+      Historical comparator data: Background rate of drug-induced liver injury (DILI)
+      requiring hospitalisation in antiviral drug class is approximately 1:8,000
+      patient-years based on published epidemiological studies (Chalasani et al., 2021).
+      DrugX prescriptions: approximately 23,000 in first 6 weeks post-launch.
+      Observed severe rate: 2/23,000 = 0.87:10,000, which is below the historical
+      background rate for this drug class.
+    source_type: RESEARCH_PAPER
+    credibility: 0.85
+    metadata: {source: published_literature, reference: "Chalasani et al. 2021 Hepatology"}
+
+  - content: >
+      Laboratory analysis (2024-08-20): Metabolomics profiling of 8 DrugX DILI cases
+      versus 20 matched controls shows elevated cytochrome P450 2C9 (CYP2C9) metabolite
+      patterns in 6/8 cases. Genetic screening of 5 consented cases found 4 carried the
+      CYP2C9*3/*3 variant (poor metaboliser phenotype), estimated prevalence 0.3-0.5%
+      of population. This genotype is not listed as a contraindication in the current label.
+    source_type: RESEARCH_PAPER
+    credibility: 0.88
+    metadata: {source: company_lab, date: "2024-08-20", reviewed_by: CMO_office}
+
+  - content: >
+      Drug interaction analysis (2024-08-22): Chart review of 12 DILI cases finds
+      that 9/12 patients were co-prescribed at least one strong CYP2C9 inhibitor
+      (fluconazole n=4, amiodarone n=3, fluvoxamine n=2). DrugX label states
+      "use with caution" for CYP inhibitors but does not specify dose reduction or
+      avoidance. Prescribers in 7 cases reported being unaware of the interaction
+      strength at time of prescribing.
+    source_type: CONTEXT
+    credibility: 0.91
+    metadata: {source: chart_review, date: "2024-08-22", n_cases: 12}
+
+  - content: >
+      Regulatory science opinion (2024-08-25): FDA Division of Drug Information
+      preliminary opinion (not yet official): signal does not meet the threshold for
+      immediate market withdrawal. Causality assessment using WHO-UMC scale rates
+      6 cases as "probable" DILI (score ≥6). A formal Risk Evaluation and Mitigation
+      Strategy (REMS) update is under discussion. Estimated timeline for REMS update:
+      60-90 days.
+    source_type: EXPERT_OPINION
+    credibility: 0.80
+    metadata: {source: FDA_DDI_informal, date: "2024-08-25"}
+
+  - content: >
+      Post-market registry data (2024-08-28): European Medicines Agency (EMA) post-market
+      registry covering 41,000 patients in EU shows no hepatotoxicity signal above
+      background. Methodology difference: EU registry excludes patients on concurrent
+      antivirals or antifungals (standard exclusion criteria). US data includes these
+      co-medications.
+    source_type: RESEARCH_PAPER
+    credibility: 0.87
+    metadata: {source: EMA_registry, date: "2024-08-28", n: 41000}
+
+  - content: >
+      Patient advocacy concern (2024-08-30): Letter from Liver Disease Patient Alliance
+      to FDA Commissioner requesting immediate black box warning, citing 2 fatalities
+      (one from the original 47 cases died from acute liver failure, second death
+      reported to MedWatch but not yet confirmed as causally related to DrugX).
+    source_type: OTHER
+    credibility: 0.60
+    metadata: {source: patient_advocacy, date: "2024-08-30"}
+
+  - content: >
+      Pre-clinical re-analysis (2024-09-02): Re-analysis of Phase II trial data
+      identifies 3 patients with ALT elevations >3x ULN who were not captured in
+      the primary endpoint analysis (elevations occurred after primary endpoint window
+      but within the study period). These were not reported in the label because they
+      were not statistically significant in the trial design.
+    source_type: CONTEXT
+    credibility: 0.93
+    metadata: {source: clinical_data_re-analysis, date: "2024-09-02"}
+
+claims:
+  - text: "DrugX has a causal relationship with drug-induced liver injury (DILI) above background rate"
+    claim_type: persistent
+    context_summary: >
+      Core safety signal causality assessment — is the hepatotoxicity signal
+      caused by DrugX or explained by confounders, co-medications, or background rate.
+
+  - text: "The hepatotoxicity risk is primarily driven by CYP2C9 poor metaboliser genotype"
+    claim_type: persistent
+    context_summary: >
+      Pharmacogenomic hypothesis — whether the risk is largely confined to a
+      genetically identifiable subgroup that could be screened.
+
+  - text: "Drug-drug interaction with CYP2C9 inhibitors is the primary risk amplifier, not the drug alone"
+    claim_type: persistent
+    context_summary: >
+      Whether labelling co-medications more explicitly would substantially mitigate risk
+      without requiring market withdrawal or black box warning.
+
+  - text: "Immediate regulatory action (black box warning or market withdrawal) is warranted"
+    claim_type: persistent
+    context_summary: >
+      Given the available signal strength, whether the current risk-benefit profile
+      justifies immediate label changes beyond REMS update.
