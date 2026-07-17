@@ -149,6 +149,7 @@ def _matrix_json(m: Matrix) -> dict:
         "data_points": [{"dp_id": dp.dp_id, "text": dp.text,
                          "source": dp.meta.get("source") or dp.doc_id,
                          "credibility": dp.meta.get("credibility"),
+                         "noise": dp.meta.get("noise"),
                          "diagnosticity": round(m.diagnosticity.get(dp.dp_id, 0.0), 3)}
                         for dp in m.data_points],
         "cells": {f"{h}|{d}": {"lift": round(c.lift, 3), "log_lift": round(c.log_lift, 3),

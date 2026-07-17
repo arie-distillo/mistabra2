@@ -20,9 +20,14 @@ def main():
     ap.add_argument("--scenario", type=int, default=0)
     ap.add_argument("--noise", type=int, default=0)
     ap.add_argument("--duplicates", type=int, default=0)
+    ap.add_argument("--use-llm", action="store_true",
+                    help="use the real OpenRouter LLM (default: fast deterministic mock)")
     args = ap.parse_args()
 
+    # Default to the mock so the demo is fast and free even if a key sits in .env.
     settings = Settings(cache_db_path=":memory:")
+    if not args.use_llm:
+        settings.force_mock = True
     pipe = Pipeline(settings, store=Store(":memory:"))
     print(f"LLM: {getattr(pipe.llm, 'model', '?')}   embed: {settings.embedding_backend}\n")
 

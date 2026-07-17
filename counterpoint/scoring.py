@@ -116,15 +116,24 @@ class Scorer:
         self.store.put_cell(cell)
         return cell
 
-    def grid(self, hyps: list[Hypothesis], dps: list[DataPoint],
-             progress=None) -> dict:
-        cells = {}
-        total = len(hyps) * len(dps)
-        i = 0
-        for h in hyps:
-            for dp in dps:
-                cells[(h.hyp_id, dp.dp_id)] = self.cell(h, dp)
-                i += 1
-                if progress:
-                    progress(i, total)
-        return cells
+    def grid(self, hyps, dps, progress=None, concurrency: int = 1) -> dict:
+            pairs = [(h, dp) for h in hyps for dp in dps]
+            total = len(pairs)
+            cells = {}
+            if concurrency <= 1:
+                for i, (h, dp) in enumerate(pairs, 1):
+                    cells[(h.hyp_id, dp.dp_id)] = self.cell(h, dp)
+                    if progress:
+                        progress(i, total)
+                return cells
+            from concurrent.futures import ThreadPoolExecutor, as_completed
+            done = 0
+            with ThreadPoolExecutor(max_workers=concurrency) as ex:
+                futs = {ex.submit(self.cell, h, dp): (h, dp) for h, dp in pairs}
+                for fut in as_completed(futs):
+                    h, dp = futs[fut]
+                    cells[(h.hyp_id, dp.dp_id)] = fut.result()
+                    done += 1
+                    if progress:
+                        progress(done, total)
+            return cells

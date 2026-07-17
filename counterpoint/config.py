@@ -57,7 +57,7 @@ class Settings:
     #   hashing               — offline, deterministic bag-of-words (tests, no deps)
     #   tfidf                 — offline scikit-learn TF-IDF (lexical, better grouping)
     #   sentence_transformers — real semantic embeddings (production quality)
-    embedding_backend: str = os.environ.get("COUNTERPOINT_EMBEDDING_BACKEND", "hashing")
+    embedding_backend: str = os.environ.get("COUNTERPOINT_EMBEDDING_BACKEND", "sentence_transformers")
     # Model name used only when embedding_backend == "sentence_transformers".
     embedding_model: str = os.environ.get("COUNTERPOINT_EMBEDDING_MODEL",
                                           "BAAI/bge-base-en-v1.5")
@@ -68,11 +68,15 @@ class Settings:
     # scoring
     llm_temperature: float = 0.0
     llm_max_retries: int = 4
+    # When set (COUNTERPOINT_FORCE_MOCK=1), the deterministic MockLLM is used even
+    # if an API key is present. Takes precedence over a key loaded from .env, which
+    # load_dotenv() would otherwise silently re-enable.
+    force_mock: bool = os.environ.get("COUNTERPOINT_FORCE_MOCK", "") not in ("", "0", "false")
 
     @property
     def has_api_key(self) -> bool:
-        return bool(self.openrouter_api_key)
-
+        # force_mock wins: pretend there is no key so the mock path is chosen.
+        return bool(self.openrouter_api_key) and not self.force_mock
 
 def verdict_for(log_lift: float) -> str:
     for lo, hi, name in VERDICT_BANDS:

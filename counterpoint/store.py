@@ -14,6 +14,7 @@ same sentence transparently reuses its cached scores across runs and documents.
 from __future__ import annotations
 import json
 import sqlite3
+import threading
 from typing import Optional
 from .models import Document, Chunk, DataPoint, Hypothesis, LiftCell
 
@@ -45,6 +46,7 @@ class Store:
         self.db = sqlite3.connect(path, check_same_thread=False)
         self.db.row_factory = sqlite3.Row
         self.db.executescript(SCHEMA)
+        self._lock = threading.Lock()
 
     def close(self):
         self.db.close()
@@ -116,3 +118,16 @@ class Store:
                         (c.hyp_id, c.dp_id, c.model, c.change, c.lift, c.log_lift,
                          c.relatedness, c.verdict, c.rationale))
         self.db.commit()
+
+    def put_prior(self, dp_id: str, model: str, prior: float):
+        with self._lock:
+            self.db.execute("INSERT OR REPLACE INTO prior_cache VALUES(?,?,?)",
+                            (dp_id, model, prior))
+            self.db.commit()
+
+    def put_cell(self, c: LiftCell):
+        with self._lock:
+            self.db.execute("INSERT OR REPLACE INTO lift_cache VALUES(?,?,?,?,?,?,?,?,?)",
+                            (c.hyp_id, c.dp_id, c.model, c.change, c.lift, c.log_lift,
+                             c.relatedness, c.verdict, c.rationale))
+            self.db.commit()

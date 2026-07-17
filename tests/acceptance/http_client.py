@@ -27,14 +27,31 @@ class StepLogger:
     """Prints a structured, human-readable trace of every request/response and
     every assertion. Also accumulates a machine-readable record for --json output."""
 
-    def __init__(self, verbose: bool = True):
+    def __init__(self, verbose: bool = True, log_file: str | None = None):
         self.verbose = verbose
         self.records: list[dict] = []
         self._t0 = time.time()
+        self._fh = open(log_file, "w", encoding="utf-8") if log_file else None
 
     def _p(self, s: str = ""):
         if self.verbose:
             print(s, flush=True)
+        if self._fh:
+            self._fh.write(s + "\n")
+            self._fh.flush()
+
+    def always(self, s: str = ""):
+        """Print regardless of --quiet (for summaries and the eval report), and
+        still persist to the log file."""
+        print(s, flush=True)
+        if self._fh:
+            self._fh.write(s + "\n")
+            self._fh.flush()
+
+    def close(self):
+        if self._fh:
+            self._fh.close()
+            self._fh = None
 
     def banner(self, title: str):
         self._p("\n" + "=" * 78)
