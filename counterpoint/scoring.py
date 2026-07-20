@@ -90,7 +90,9 @@ class Scorer:
         cached = self.store.get_prior(dp.dp_id, self.model)
         if cached is not None:
             return cached
-        r = self.llm.json(PRIOR_PROMPT.replace("{stmt}", dp.text), max_tokens=120)
+        r = self.llm.json(PRIOR_PROMPT.replace("{stmt}", dp.text), max_tokens=400)   # headroom: a reasoning model can
+                              # spend a small budget entirely on thinking and return
+                              # empty content
         p = float(min(max(_safe_float(r.get("prior"), 0.5), 1e-3), 0.99))
         self.store.put_prior(dp.dp_id, self.model, p)
         return p
@@ -101,10 +103,10 @@ class Scorer:
             return cached
         prior = self.prior(dp)
         rel = min(max(_safe_float(self.llm.json(
-            REL_PROMPT.replace("{h}", h.text).replace("{d}", dp.text), max_tokens=60
+            REL_PROMPT.replace("{h}", h.text).replace("{d}", dp.text), max_tokens=400
         ).get("relatedness"), 0.0), 0.0), 1.0)
         lr = self.llm.json(
-            LIFT_PROMPT.replace("{h}", h.text).replace("{d}", dp.text), max_tokens=200)
+            LIFT_PROMPT.replace("{h}", h.text).replace("{d}", dp.text), max_tokens=600)
         change = str(lr.get("change", "unchanged")).strip().lower()
         if change not in LIFT_SCALE:
             change = "unchanged"
@@ -116,24 +118,28 @@ class Scorer:
         self.store.put_cell(cell)
         return cell
 
-    def grid(self, hyps, dps, progress=None, concurrency: int = 1) -> dict:
-            pairs = [(h, dp) for h in hyps for dp in dps]
-            total = len(pairs)
-            cells = {}
-            if concurrency <= 1:
-                for i, (h, dp) in enumerate(pairs, 1):
-                    cells[(h.hyp_id, dp.dp_id)] = self.cell(h, dp)
-                    if progress:
-                        progress(i, total)
-                return cells
-            from concurrent.futures import ThreadPoolExecutor, as_completed
-            done = 0
-            with ThreadPoolExecutor(max_workers=concurrency) as ex:
-                futs = {ex.submit(self.cell, h, dp): (h, dp) for h, dp in pairs}
-                for fut in as_completed(futs):
-                    h, dp = futs[fut]
-                    cells[(h.hyp_id, dp.dp_id)] = fut.result()
-                    done += 1
-                    if progress:
-                        progress(done, total)
+    def grid(self, hyps: list[Hypothesis], dps: list[DataPoint],
+             progress=None, concurrency: int = 1) -> dict:
+        """Score every (hypothesis, data point) cell. Cells are independent, so with
+        concurrency>1 they run in a thread pool (LLM calls are I/O-bound). progress,
+        if given, is called as progress(done, total) after each cell completes."""
+        pairs = [(h, dp) for h in hyps for dp in dps]
+        total = len(pairs)
+        cells = {}
+        if concurrency <= 1:
+            for i, (h, dp) in enumerate(pairs, 1):
+                cells[(h.hyp_id, dp.dp_id)] = self.cell(h, dp)
+                if progress:
+                    progress(i, total)
             return cells
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        done = 0
+        with ThreadPoolExecutor(max_workers=concurrency) as ex:
+            futs = {ex.submit(self.cell, h, dp): (h, dp) for h, dp in pairs}
+            for fut in as_completed(futs):
+                h, dp = futs[fut]
+                cells[(h.hyp_id, dp.dp_id)] = fut.result()
+                done += 1
+                if progress:
+                    progress(done, total)
+        return cells

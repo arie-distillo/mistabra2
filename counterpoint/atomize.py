@@ -9,13 +9,25 @@ from __future__ import annotations
 from .models import Chunk, DataPoint
 from .llm import LLM
 
-ATOMIZE_PROMPT = """Split the passage below into atomic, self-contained factual statements.
-Rules:
-- exactly one proposition per statement (one subject, one claim)
-- resolve pronouns and references so each statement stands alone out of context
-- preserve specific figures, dates, names, and quantities verbatim
-- do not add interpretation, do not infer causes, do not editorialise
-- omit pure meta-text (headings, "log entry", document labels) unless it carries a fact
+ATOMIZE_PROMPT = """Split the passage into self-contained factual statements.
+
+Each statement must be the smallest unit that is still INFORMATIVE ALONE. Prefer fewer,
+complete statements. Splitting too finely destroys facts.
+
+Keep together in ONE statement:
+- a measurement and what it is compared against
+  ("pressure dropped below the 15 Pa threshold" = ONE statement)
+- a fact and its qualifiers (quantity, unit, time, location, entity)
+- a finding and what was found
+  ("inspection revealed the valve was blocked" -> "The valve was blocked")
+
+Split only genuinely separate facts: different events, entities, or times.
+
+Also:
+- resolve pronouns so each statement stands alone
+- keep figures, dates, names, quantities verbatim
+- no interpretation, no inferred causes
+- drop meta-text and anything uninformative by itself
 
 Return only JSON: {"data_points": ["statement 1", "statement 2", ...]}
 
@@ -24,7 +36,11 @@ PASSAGE:
 
 
 def atomize_chunk(chunk: Chunk, llm: LLM) -> list[DataPoint]:
-    resp = llm.json(ATOMIZE_PROMPT.replace("{passage}", chunk.text), max_tokens=900)
+    resp = llm.json(ATOMIZE_PROMPT.replace("{passage}", chunk.text), max_tokens=2500)
+    # 2500, not 900: the prompt asks the model to re-read and merge over-split
+    # statements, which invites extended reasoning. A reasoning-capable model can
+    # spend a small budget entirely on thinking and return EMPTY content — which
+    # surfaces as an atomization failure, not as a smaller output.
     items = resp.get("data_points", [])
     out = []
     seen = set()

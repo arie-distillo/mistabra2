@@ -1,0 +1,319 @@
+      · launching uvicorn on port 8123 (model=anthropic/claude-sonnet-4.5, in-memory DB, embeddings=sentence_transformers)
+
+==============================================================================
+  ACCEPTANCE RUN against http://127.0.0.1:8123
+==============================================================================
+      · health attempt 1 failed: [WinError 10061] No connection could be made because the target machine actively refused it
+      · health attempt 2 failed: [WinError 10061] No connection could be made because the target machine actively refused it
+      · health attempt 3 failed: [WinError 10061] No connection could be made because the target machine actively refused it
+      · health ok after 9 attempt(s)
+
+==============================================================================
+  Check: reset yields an empty system
+==============================================================================
+
+[1] Reset to a clean state
+    → POST http://127.0.0.1:8123/api/reset
+      body: {"in_memory": true}
+    ← 200  (3583 ms)
+      {"status": "reset", "in_memory": true, "kept_cache": false}
+    [PASS] reset returns 200
+
+[2] Matrix on an empty corpus is empty
+    → POST http://127.0.0.1:8123/api/matrix
+    ← 200  (4 ms)
+      {"hypotheses": [], "data_points": [], "cells": {}}
+    [PASS] matrix returns 200
+    [PASS] no hypotheses
+    [PASS] no data points
+
+==============================================================================
+  Check: a document is chunked and atomized into data points
+==============================================================================
+    → POST http://127.0.0.1:8123/api/reset
+      body: {"in_memory": true, "keep_cache": false}
+    ← 200  (2795 ms)
+      {"status": "reset", "in_memory": true, "kept_cache": false}
+
+[1] POST a multi-sentence document (exercises semantic chunking)
+    → POST http://127.0.0.1:8123/api/documents
+      body: {"name": "incident", "text": "The oven temperature sensors reported stable readings all night. No fault codes were raised by the controller. The bakery switched to a new flour supplier in November. Deliveries from that supplier arrived late three times.", "meta": {"source": "incident_report"}}
+    ← 200  (5937 ms)
+      {"doc_id": "doc::21381731", "n_data_points": 4, "data_points": ["The oven temperature sensors reported stable readings all night.", "No fault codes were raised by the controller.", "The bakery switched to a new flour supplier in November.", "Deliveries from the new flour supplier arrived late three times."]}
+    [PASS] document accepted
+      ·   • The oven temperature sensors reported stable readings all night.
+      ·   • No fault codes were raised by the controller.
+      ·   • The bakery switched to a new flour supplier in November.
+      ·   • Deliveries from the new flour supplier arrived late three times.
+    [PASS] atomized into >= 2 data points
+    [PASS] a flour-related data point is present
+
+==============================================================================
+  Check: the full validation matrix is well-formed
+==============================================================================
+
+[1] Load a small corpus + 2 hypotheses
+    → POST http://127.0.0.1:8123/api/reset
+      body: {"in_memory": true, "keep_cache": false}
+    ← 200  (3082 ms)
+      {"status": "reset", "in_memory": true, "kept_cache": false}
+    → POST http://127.0.0.1:8123/api/episodes
+      body: {"content": "The bakery switched to a new flour supplier in November.", "meta": {"source": "d1", "credibility": 1.0, "noise": null}}
+    ← 200  (2405 ms)
+      {"doc_id": "doc::17890238", "n_data_points": 1}
+    → POST http://127.0.0.1:8123/api/episodes
+      body: {"content": "Only loaves baked with the new supplier's flour came out overbaked.", "meta": {"source": "d2", "credibility": 1.0, "noise": null}}
+    ← 200  (2436 ms)
+      {"doc_id": "doc::96564541", "n_data_points": 1}
+    → POST http://127.0.0.1:8123/api/episodes
+      body: {"content": "The oven thermostats were inspected on Monday and found accurate.", "meta": {"source": "d3", "credibility": 1.0, "noise": null}}
+    ← 200  (3629 ms)
+      {"doc_id": "doc::33118059", "n_data_points": 2}
+    → POST http://127.0.0.1:8123/api/episodes
+      body: {"content": "The office cafeteria introduced a new seasonal pumpkin soup.", "meta": {"source": "d4", "credibility": 1.0, "noise": "irrelevant"}}
+    ← 200  (2101 ms)
+      {"doc_id": "doc::7291162", "n_data_points": 1}
+    → POST http://127.0.0.1:8123/api/hypotheses
+      body: {"text": "The new supplier's flour is defective."}
+    ← 200  (4 ms)
+      {"hyp_id": "e1002d860838498d", "text": "The new supplier's flour is defective."}
+    → POST http://127.0.0.1:8123/api/hypotheses
+      body: {"text": "The oven thermostats are malfunctioning."}
+    ← 200  (3 ms)
+      {"hyp_id": "5fc4a236e91a2ad9", "text": "The oven thermostats are malfunctioning."}
+
+[2] Build the matrix
+    → POST http://127.0.0.1:8123/api/matrix
+    ← 200  (13293 ms)
+      {"hypotheses": [{"hyp_id": "e1002d860838498d", "text": "The new supplier's flour is defective.", "score": 2.303, "verdict": "supports", "supporting": 3, "contradicting": 1, "neutral": 1}, {"hyp_id": "5fc4a236e91a2ad9", "text": "The oven thermostats are malfunctioning.", "score": -3.912, "verdict": "contradicts", "supporting": 1, "contradicting": 2, "neutral": 2}], "data_points": [{"dp_id": "62b339284261b2f8", "text": "The bakery switched to a new flour supplier in November.", "source": "d1", "credibility": 1.0, "noise": null, "diagnosticity": 0.648}, {"dp_id": "5a65ddda98f6fcd8", "text": "The oven thermostats were inspected on Monday.", "source": "d3", "credibility": 1.0, "noise": null, "diagnosticity": 0.48}, {"dp_id": "9f58e9d75e183dea", "text": "The oven thermostats were found accurate.", "source": "d3", "credibility": 1.0, "noise": null, "diagnosticity": 5.302}, {"dp_id": "70f528d0a90db6c0", "text": "The office cafeteria introduced a new seasonal pumpkin soup.", "source": "d4", "credibility": 1.0, "noise": "irrelevant", "diagnosticity": 0.0}, {"dp_id": "7c5c5e140698e09e", "text": "Only loaves baked with the new supplier's flour came out overbaked.", "source": "d2", "credibility": 1.0, "noise": null, "diagnosticity": 0.48}], "cells": {"e1002d860838498d|62b339284261b2f8": {"lift": 5.0, "log_lift": 1.609, "verdict": "strongly_supports"}, "5fc4a236e91a2ad9|62b339284261b2f8": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "e1002d860838498d|5a65ddda98f6fcd8": {"lift": 0.5, "log_lift": -0.693, "verdict": "contradicts"}, "5fc4a236e91a2ad9|70f528d0a90db6c0": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "5fc4a236e91a2ad9|5a65ddda98f6fcd8": {"lift": 2.0, "log_lift": 0.693, "verdict": "supports"}, "5fc4a236e91a2ad9|7c5c5e140698e09e": {"lift": 0.5, "log_lift": -0.693, "verdict": "contradicts"}, "5fc4a236e91a2ad9|9f58e9d75e183dea": {"lift": 0.02, "log_lift": -3.912, "verdict": "strongly_contradicts"}, "e1002d860838498d|9f58e9d75e183dea": {"lift": 2.0, "log_lift": 0.693, "verdict": "supports"}, "e1002d860838498d|70f528d0a90db6c0": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "e1002d860838498d|7c5c5e140698e09e": {"lift": 2.0, "log_lift": 0.693, "verdict": "supports"}}}
+    [PASS] matrix built
+      · 2 hypotheses x 5 data points = 10 cells
+
+[3] Every hypothesis-datapoint pair has a cell
+    [PASS] full grid present
+
+[4] Hypotheses are ranked by score (descending)
+      · scores: +2.30, -3.91
+    [PASS] scores descending
+
+[5] Every cell has a finite log-lift and a verdict
+    [PASS] all cells finite and verdicted
+
+==============================================================================
+  Check: hypothesis detail is cited and ordered
+==============================================================================
+    → POST http://127.0.0.1:8123/api/reset
+      body: {"in_memory": true, "keep_cache": false}
+    ← 200  (2814 ms)
+      {"status": "reset", "in_memory": true, "kept_cache": false}
+    → POST http://127.0.0.1:8123/api/episodes
+      body: {"content": "The bakery switched to a new flour supplier in November.", "meta": {"source": "d1", "credibility": 1.0, "noise": null}}
+    ← 200  (2106 ms)
+      {"doc_id": "doc::17890238", "n_data_points": 1}
+    → POST http://127.0.0.1:8123/api/episodes
+      body: {"content": "Only loaves baked with the new supplier's flour came out overbaked.", "meta": {"source": "d2", "credibility": 1.0, "noise": null}}
+    ← 200  (1746 ms)
+      {"doc_id": "doc::96564541", "n_data_points": 1}
+    → POST http://127.0.0.1:8123/api/episodes
+      body: {"content": "The oven thermostats were inspected on Monday and found accurate.", "meta": {"source": "d3", "credibility": 1.0, "noise": null}}
+    ← 200  (1936 ms)
+      {"doc_id": "doc::33118059", "n_data_points": 2}
+    → POST http://127.0.0.1:8123/api/episodes
+      body: {"content": "The office cafeteria introduced a new seasonal pumpkin soup.", "meta": {"source": "d4", "credibility": 1.0, "noise": "irrelevant"}}
+    ← 200  (2125 ms)
+      {"doc_id": "doc::7291162", "n_data_points": 1}
+    → POST http://127.0.0.1:8123/api/hypotheses
+      body: {"text": "The new supplier's flour is defective."}
+    ← 200  (2 ms)
+      {"hyp_id": "e1002d860838498d", "text": "The new supplier's flour is defective."}
+    → POST http://127.0.0.1:8123/api/hypotheses
+      body: {"text": "The oven thermostats are malfunctioning."}
+    ← 200  (3 ms)
+      {"hyp_id": "5fc4a236e91a2ad9", "text": "The oven thermostats are malfunctioning."}
+    → POST http://127.0.0.1:8123/api/matrix
+    ← 200  (10732 ms)
+      {"hypotheses": [{"hyp_id": "e1002d860838498d", "text": "The new supplier's flour is defective.", "score": 2.303, "verdict": "supports", "supporting": 3, "contradicting": 1, "neutral": 1}, {"hyp_id": "5fc4a236e91a2ad9", "text": "The oven thermostats are malfunctioning.", "score": -3.912, "verdict": "contradicts", "supporting": 1, "contradicting": 2, "neutral": 2}], "data_points": [{"dp_id": "62b339284261b2f8", "text": "The bakery switched to a new flour supplier in November.", "source": "d1", "credibility": 1.0, "noise": null, "diagnosticity": 0.648}, {"dp_id": "5a65ddda98f6fcd8", "text": "The oven thermostats were inspected on Monday.", "source": "d3", "credibility": 1.0, "noise": null, "diagnosticity": 0.48}, {"dp_id": "9f58e9d75e183dea", "text": "The oven thermostats were found accurate.", "source": "d3", "credibility": 1.0, "noise": null, "diagnosticity": 5.302}, {"dp_id": "70f528d0a90db6c0", "text": "The office cafeteria introduced a new seasonal pumpkin soup.", "source": "d4", "credibility": 1.0, "noise": "irrelevant", "diagnosticity": 0.0}, {"dp_id": "7c5c5e140698e09e", "text": "Only loaves baked with the new supplier's flour came out overbaked.", "source": "d2", "credibility": 1.0, "noise": null, "diagnosticity": 0.48}], "cells": {"e1002d860838498d|62b339284261b2f8": {"lift": 5.0, "log_lift": 1.609, "verdict": "strongly_supports"}, "5fc4a236e91a2ad9|62b339284261b2f8": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "e1002d860838498d|9f58e9d75e183dea": {"lift": 2.0, "log_lift": 0.693, "verdict": "supports"}, "5fc4a236e91a2ad9|9f58e9d75e183dea": {"lift": 0.02, "log_lift": -3.912, "verdict": "strongly_contradicts"}, "5fc4a236e91a2ad9|5a65ddda98f6fcd8": {"lift": 2.0, "log_lift": 0.693, "verdict": "supports"}, "5fc4a236e91a2ad9|7c5c5e140698e09e": {"lift": 0.5, "log_lift": -0.693, "verdict": "contradicts"}, "5fc4a236e91a2ad9|70f528d0a90db6c0": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "e1002d860838498d|5a65ddda98f6fcd8": {"lift": 0.5, "log_lift": -0.693, "verdict": "contradicts"}, "e1002d860838498d|70f528d0a90db6c0": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "e1002d860838498d|7c5c5e140698e09e": {"lift": 2.0, "log_lift": 0.693, "verdict": "supports"}}}
+
+[1] Fetch detail for top hypothesis e1002d860838498d
+    → GET http://127.0.0.1:8123/api/hypotheses/e1002d860838498d
+    ← 200  (16 ms)
+      {"hypothesis": "The new supplier's flour is defective.", "score": 2.3025850929940455, "verdict": "supports", "counts": {"supporting": 3, "contradicting": 1, "neutral": 1}, "evidence": [{"data_point": "The oven thermostats were inspected on Monday.", "source": "d3", "credibility": 1.0, "lift": 0.5, "log_lift": -0.693, "verdict": "contradicts", "relatedness": 0.3, "diagnosticity": 0.48, "rationale": "If the flour is defective, that alternative explanation for baking problems makes it less likely that someone would have inspected the oven thermostats on Monday."}, {"data_point": "The office cafeteria introduced a new seasonal pumpkin soup.", "source": "d4", "credibility": 1.0, "lift": 1.0, "log_lift": 0.0, "verdict": "neutral", "relatedness": 0.1, "diagnosticity": 0.0, "rationale": "A defective flour supplier has no logical connection to whether a cafeteria introduces a pumpkin soup dish."}, {"data_point": "The oven thermostats were found accurate.", "source": "d3", "credibility": 1.0, "lift": 2.0, "log_lift": 0.693, "verdict": "supports", "relatedness": 0.6, "diagnosticity": 5.302, "rationale": "If the flour is defective, it becomes more likely that other potential causes like oven temperature were ruled out during investigation."}, {"data_point": "Only loaves baked with the new supplier's flour came out overbaked.", "source": "d2", "credibility": 1.0, "lift": 2.0, "log_lift": 0.693, "verdict": "supports", "relatedness": 0.95, "diagnosticity": 0.48, "rationale": "If the flour is defective, it becomes more plausible that only loaves using that specific flour would exhibit the unusual overbaking problem."}, {"data_point": "The bakery switched to a new flour supplier in November.", "source": "d1", "credibility": 1.0, "lift": 5.0, "log_lift": 1.609, "verdict": "strongly_supports", "relatedness": 0.95, "diagnosticity": 0.648, "rationale": "Learning that the new supplier's flour is defective presupposes that there is a new supplier, making the switch to a new supplier much more likely."}]}
+    [PASS] detail returns 200
+      · hypothesis: The new supplier's flour is defective.
+
+[2] Evidence present and every item carries a citation
+    [PASS] evidence present
+      ·   [contradicts         ] lift=0.50 src=d3
+      ·   [neutral             ] lift=1.00 src=d4
+      ·   [supports            ] lift=2.00 src=d3
+      ·   [supports            ] lift=2.00 src=d2
+      ·   [strongly_supports   ] lift=5.00 src=d1
+    [PASS] every evidence item has text and a source citation
+
+[3] Evidence ordered most-contradicting first
+    [PASS] log-lift ascending
+
+==============================================================================
+  Check: unknown hypothesis id returns 404
+==============================================================================
+    → POST http://127.0.0.1:8123/api/reset
+      body: {"in_memory": true, "keep_cache": false}
+    ← 200  (2626 ms)
+      {"status": "reset", "in_memory": true, "kept_cache": false}
+    → POST http://127.0.0.1:8123/api/episodes
+      body: {"content": "The bakery switched to a new flour supplier in November.", "meta": {"source": "d1", "credibility": 1.0, "noise": null}}
+    ← 200  (2382 ms)
+      {"doc_id": "doc::17890238", "n_data_points": 1}
+    → POST http://127.0.0.1:8123/api/episodes
+      body: {"content": "Only loaves baked with the new supplier's flour came out overbaked.", "meta": {"source": "d2", "credibility": 1.0, "noise": null}}
+    ← 200  (1711 ms)
+      {"doc_id": "doc::96564541", "n_data_points": 1}
+    → POST http://127.0.0.1:8123/api/episodes
+      body: {"content": "The oven thermostats were inspected on Monday and found accurate.", "meta": {"source": "d3", "credibility": 1.0, "noise": null}}
+    ← 200  (1626 ms)
+      {"doc_id": "doc::33118059", "n_data_points": 2}
+    → POST http://127.0.0.1:8123/api/episodes
+      body: {"content": "The office cafeteria introduced a new seasonal pumpkin soup.", "meta": {"source": "d4", "credibility": 1.0, "noise": "irrelevant"}}
+    ← 200  (3046 ms)
+      {"doc_id": "doc::7291162", "n_data_points": 1}
+    → POST http://127.0.0.1:8123/api/hypotheses
+      body: {"text": "The new supplier's flour is defective."}
+    ← 200  (3 ms)
+      {"hyp_id": "e1002d860838498d", "text": "The new supplier's flour is defective."}
+    → POST http://127.0.0.1:8123/api/hypotheses
+      body: {"text": "The oven thermostats are malfunctioning."}
+    ← 200  (4 ms)
+      {"hyp_id": "5fc4a236e91a2ad9", "text": "The oven thermostats are malfunctioning."}
+
+[1] GET a non-existent hypothesis id
+    → GET http://127.0.0.1:8123/api/hypotheses/deadbeef
+    ← 404  (13498 ms)
+      {"detail": "hypothesis not found"}
+    [PASS] returns 404
+
+==============================================================================
+  Check: irrelevant data stays low-diagnosticity
+==============================================================================
+    → POST http://127.0.0.1:8123/api/reset
+      body: {"in_memory": true, "keep_cache": false}
+    ← 200  (2165 ms)
+      {"status": "reset", "in_memory": true, "kept_cache": false}
+    → POST http://127.0.0.1:8123/api/episodes
+      body: {"content": "The bakery switched to a new flour supplier in November.", "meta": {"source": "d1", "credibility": 1.0, "noise": null}}
+    ← 200  (2053 ms)
+      {"doc_id": "doc::17890238", "n_data_points": 1}
+    → POST http://127.0.0.1:8123/api/episodes
+      body: {"content": "Only loaves baked with the new supplier's flour came out overbaked.", "meta": {"source": "d2", "credibility": 1.0, "noise": null}}
+    ← 200  (2152 ms)
+      {"doc_id": "doc::96564541", "n_data_points": 1}
+    → POST http://127.0.0.1:8123/api/episodes
+      body: {"content": "The oven thermostats were inspected on Monday and found accurate.", "meta": {"source": "d3", "credibility": 1.0, "noise": null}}
+    ← 200  (2786 ms)
+      {"doc_id": "doc::33118059", "n_data_points": 2}
+    → POST http://127.0.0.1:8123/api/episodes
+      body: {"content": "The office cafeteria introduced a new seasonal pumpkin soup.", "meta": {"source": "d4", "credibility": 1.0, "noise": "irrelevant"}}
+    ← 200  (1717 ms)
+      {"doc_id": "doc::7291162", "n_data_points": 1}
+    → POST http://127.0.0.1:8123/api/hypotheses
+      body: {"text": "The new supplier's flour is defective."}
+    ← 200  (4 ms)
+      {"hyp_id": "e1002d860838498d", "text": "The new supplier's flour is defective."}
+    → POST http://127.0.0.1:8123/api/hypotheses
+      body: {"text": "The oven thermostats are malfunctioning."}
+    ← 200  (3 ms)
+      {"hyp_id": "5fc4a236e91a2ad9", "text": "The oven thermostats are malfunctioning."}
+    → POST http://127.0.0.1:8123/api/matrix
+    ← 200  (12308 ms)
+      {"hypotheses": [{"hyp_id": "e1002d860838498d", "text": "The new supplier's flour is defective.", "score": 2.303, "verdict": "supports", "supporting": 3, "contradicting": 1, "neutral": 1}, {"hyp_id": "5fc4a236e91a2ad9", "text": "The oven thermostats are malfunctioning.", "score": -3.912, "verdict": "contradicts", "supporting": 1, "contradicting": 2, "neutral": 2}], "data_points": [{"dp_id": "62b339284261b2f8", "text": "The bakery switched to a new flour supplier in November.", "source": "d1", "credibility": 1.0, "noise": null, "diagnosticity": 0.648}, {"dp_id": "5a65ddda98f6fcd8", "text": "The oven thermostats were inspected on Monday.", "source": "d3", "credibility": 1.0, "noise": null, "diagnosticity": 0.48}, {"dp_id": "9f58e9d75e183dea", "text": "The oven thermostats were found accurate.", "source": "d3", "credibility": 1.0, "noise": null, "diagnosticity": 5.302}, {"dp_id": "70f528d0a90db6c0", "text": "The office cafeteria introduced a new seasonal pumpkin soup.", "source": "d4", "credibility": 1.0, "noise": "irrelevant", "diagnosticity": 0.0}, {"dp_id": "7c5c5e140698e09e", "text": "Only loaves baked with the new supplier's flour came out overbaked.", "source": "d2", "credibility": 1.0, "noise": null, "diagnosticity": 0.48}], "cells": {"5fc4a236e91a2ad9|7c5c5e140698e09e": {"lift": 0.5, "log_lift": -0.693, "verdict": "contradicts"}, "5fc4a236e91a2ad9|5a65ddda98f6fcd8": {"lift": 2.0, "log_lift": 0.693, "verdict": "supports"}, "5fc4a236e91a2ad9|62b339284261b2f8": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "5fc4a236e91a2ad9|70f528d0a90db6c0": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "e1002d860838498d|62b339284261b2f8": {"lift": 5.0, "log_lift": 1.609, "verdict": "strongly_supports"}, "5fc4a236e91a2ad9|9f58e9d75e183dea": {"lift": 0.02, "log_lift": -3.912, "verdict": "strongly_contradicts"}, "e1002d860838498d|9f58e9d75e183dea": {"lift": 2.0, "log_lift": 0.693, "verdict": "supports"}, "e1002d860838498d|5a65ddda98f6fcd8": {"lift": 0.5, "log_lift": -0.693, "verdict": "contradicts"}, "e1002d860838498d|70f528d0a90db6c0": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "e1002d860838498d|7c5c5e140698e09e": {"lift": 2.0, "log_lift": 0.693, "verdict": "supports"}}}
+
+[1] The off-topic data point is no more diagnostic than the rest
+      · mean diagnosticity — noise 0.000 vs all 1.382
+    [PASS] noise no more diagnostic than average
+
+==============================================================================
+  SUMMARY
+==============================================================================
+  target: http://127.0.0.1:8123
+  passed: 6/6
+
+==============================================================================
+  CAPABILITY EVALUATION (graded, non-gating)
+==============================================================================
+
+[miss_ctrl_01] missing-hypothesis | clinical_trials | control=True adversarial=None
+    → POST http://127.0.0.1:8123/api/reset
+      body: {"in_memory": false, "keep_cache": true}
+    ← 200  (2 ms)
+      {"status": "reset", "in_memory": false, "kept_cache": true}
+    → POST http://127.0.0.1:8123/api/episodes
+      body: {"content": "Patient diary entries frequently mentioned severe nausea, stomach cramping, and vomiting shortly after taking the pill.", "meta": {"source": "d1", "credibility": 1.0}}
+    ← 200  (2798 ms)
+      {"doc_id": "doc::17890238", "n_data_points": 3}
+    → POST http://127.0.0.1:8123/api/episodes
+      body: {"content": "Clinical coordinators noted that moving the appointment window from 08:00 AM to 10:00 AM resolved 80% of scheduling complaints.", "meta": {"source": "d2", "credibility": 1.0}}
+    ← 200  (2260 ms)
+      {"doc_id": "doc::96564541", "n_data_points": 1}
+    → POST http://127.0.0.1:8123/api/episodes
+      body: {"content": "The clinical trial pharmacy confirmed that all medication kits were stored at the correct temperature of 4°C.", "meta": {"source": "d3", "credibility": 1.0}}
+    ← 200  (2407 ms)
+      {"doc_id": "doc::33118059", "n_data_points": 2}
+    → POST http://127.0.0.1:8123/api/episodes
+      body: {"content": "An independent laboratory audit verified the chemical purity of the active pharmaceutical ingredient was 99.8%.", "meta": {"source": "d4", "credibility": 1.0}}
+    ← 200  (2714 ms)
+      {"doc_id": "doc::7291162", "n_data_points": 1}
+    → POST http://127.0.0.1:8123/api/episodes
+      body: {"content": "The institutional review board approved the revised patient consent form amendment without any delays.", "meta": {"source": "d5", "credibility": 1.0}}
+    ← 200  (2665 ms)
+      {"doc_id": "doc::96983625", "n_data_points": 2}
+    → POST http://127.0.0.1:8123/api/episodes
+      body: {"content": "Nurse practitioner Kelly reported that blood pressure readouts remained within normal physiological baselines.", "meta": {"source": "d6", "credibility": 1.0}}
+    ← 200  (2438 ms)
+      {"doc_id": "doc::57533097", "n_data_points": 1}
+    → POST http://127.0.0.1:8123/api/episodes
+      body: {"content": "The trial software dashboard updated its data visualization charts automatically at the end of the week.", "meta": {"source": "d7", "credibility": 1.0}}
+    ← 200  (2291 ms)
+      {"doc_id": "doc::81271063", "n_data_points": 1}
+    → POST http://127.0.0.1:8123/api/episodes
+      body: {"content": "Transportation stipends were distributed to all active study participants via prepaid debit cards.", "meta": {"source": "d8", "credibility": 1.0}}
+    ← 200  (2611 ms)
+      {"doc_id": "doc::75473948", "n_data_points": 2}
+    → POST http://127.0.0.1:8123/api/hypotheses
+      body: {"text": "Patient dropouts surged because the drug caused severe gastrointestinal distress."}
+    ← 200  (3 ms)
+      {"hyp_id": "a20a4bdb35f459b2", "text": "Patient dropouts surged because the drug caused severe gastrointestinal distress."}
+    → POST http://127.0.0.1:8123/api/hypotheses
+      body: {"text": "Patient dropouts surged because the daily clinic check-in schedule conflicted with standard commuting hours."}
+    ← 200  (3 ms)
+      {"hyp_id": "67b7fc336354f6f7", "text": "Patient dropouts surged because the daily clinic check-in schedule conflicted with standard commuting hours."}
+    → POST http://127.0.0.1:8123/api/matrix
+    ← 200  (24445 ms)
+      {"hypotheses": [{"hyp_id": "a20a4bdb35f459b2", "text": "Patient dropouts surged because the drug caused severe gastrointestinal distress.", "score": 4.828, "verdict": "supports", "supporting": 4, "contradicting": 1, "neutral": 8}, {"hyp_id": "67b7fc336354f6f7", "text": "Patient dropouts surged because the daily clinic check-in schedule conflicted with standard commuting hours.", "score": 0.916, "verdict": "neutral", "supporting": 1, "contradicting": 1, "neutral": 11}], "data_points": [{"dp_id": "58aa273762a14f8c", "text": "Patient diary entries frequently mentioned vomiting shortly after taking the pill.", "source": "d1", "credibility": 1.0, "noise": null, "diagnosticity": 0.648}, {"dp_id": "bd93ba5d2a6c5473", "text": "Patient diary entries frequently mentioned severe nausea shortly after taking the pill.", "source": "d1", "credibility": 1.0, "noise": null, "diagnosticity": 0.648}, {"dp_id": "f9dc80d256aaf5db", "text": "Patient diary entries frequently mentioned stomach cramping shortly after taking the pill.", "source": "d1", "credibility": 1.0, "noise": null, "diagnosticity": 0.648}, {"dp_id": "948d3741a10cfeae", "text": "The clinical trial pharmacy confirmed that all medication kits were stored at 4°C.", "source": "d3", "credibility": 1.0, "noise": null, "diagnosticity": 0.0}, {"dp_id": "9fa3b059c9c535d3", "text": "The correct storage temperature for the medication kits was 4°C.", "source": "d3", "credibility": 1.0, "noise": null, "diagnosticity": 0.0}, {"dp_id": "a59d7f58a680d132", "text": "Nurse practitioner Kelly reported that blood pressure readouts remained within normal physiological baselines.", "source": "d6", "credibility": 1.0, "noise": null, "diagnosticity": 0.0}, {"dp_id": "f8838170e43e57a0", "text": "An independent laboratory audit verified the chemical purity of the active pharmaceutical ingredient was 99.8%.", "source": "d4", "credibility": 1.0, "noise": null, "diagnosticity": 0.0}, {"dp_id": "44a0bf902ecaea57", "text": "Transportation stipends were distributed to all active study participants.", "source": "d8", "credibility": 1.0, "noise": null, "diagnosticity": 0.12}, {"dp_id": "ff14c9ad7ee4f373", "text": "Transportation stipends were distributed via prepaid debit cards.", "source": "d8", "credibility": 1.0, "noise": null, "diagnosticity": 0.0}, {"dp_id": "164d8c9df1b02c11", "text": "The trial software dashboard updated its data visualization charts automatically at the end of the week.", "source": "d7", "credibility": 1.0, "noise": null, "diagnosticity": 0.0}, {"dp_id": "6a89165778c4baec", "text": "Clinical coordinators noted that moving the appointment window from 08:00 AM to 10:00 AM resolved 80% of scheduling complaints.", "source": "d2", "credibility": 1.0, "noise": null, "diagnosticity": 0.648}, {"dp_id": "75bc008e3aab1933", "text": "The institutional review board approved the revised patient consent form amendment without any delays.", "source": "d5", "credibility": 1.0, "noise": null, "diagnosticity": 0.12}, {"dp_id": "b3f5399a758ef5e3", "text": "The institutional review board approved the revised patient consent form amendment.", "source": "d5", "credibility": 1.0, "noise": null, "diagnosticity": 0.12}], "cells": {"67b7fc336354f6f7|a59d7f58a680d132": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "67b7fc336354f6f7|f9dc80d256aaf5db": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "67b7fc336354f6f7|58aa273762a14f8c": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "67b7fc336354f6f7|bd93ba5d2a6c5473": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "67b7fc336354f6f7|9fa3b059c9c535d3": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "67b7fc336354f6f7|44a0bf902ecaea57": {"lift": 0.5, "log_lift": -0.693, "verdict": "contradicts"}, "67b7fc336354f6f7|948d3741a10cfeae": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "67b7fc336354f6f7|f8838170e43e57a0": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "67b7fc336354f6f7|ff14c9ad7ee4f373": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "a20a4bdb35f459b2|f9dc80d256aaf5db": {"lift": 5.0, "log_lift": 1.609, "verdict": "strongly_supports"}, "a20a4bdb35f459b2|58aa273762a14f8c": {"lift": 5.0, "log_lift": 1.609, "verdict": "strongly_supports"}, "67b7fc336354f6f7|75bc008e3aab1933": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "a20a4bdb35f459b2|bd93ba5d2a6c5473": {"lift": 5.0, "log_lift": 1.609, "verdict": "strongly_supports"}, "67b7fc336354f6f7|164d8c9df1b02c11": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "67b7fc336354f6f7|b3f5399a758ef5e3": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "67b7fc336354f6f7|6a89165778c4baec": {"lift": 5.0, "log_lift": 1.609, "verdict": "strongly_supports"}, "a20a4bdb35f459b2|a59d7f58a680d132": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "a20a4bdb35f459b2|948d3741a10cfeae": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "a20a4bdb35f459b2|9fa3b059c9c535d3": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "a20a4bdb35f459b2|f8838170e43e57a0": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "a20a4bdb35f459b2|164d8c9df1b02c11": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "a20a4bdb35f459b2|ff14c9ad7ee4f373": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "a20a4bdb35f459b2|44a0bf902ecaea57": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "a20a4bdb35f459b2|6a89165778c4baec": {"lift": 1.0, "log_lift": 0.0, "verdict": "neutral"}, "a20a4bdb35f459b2|b3f5399a758ef5e3": {"lift": 2.0, "log_lift": 0.693, "verdict": "supports"}, "a20a4bdb35f459b2|75bc008e3aab1933": {"lift": 0.5, "log_lift": -0.693, "verdict": "contradicts"}}}
+    → POST http://127.0.0.1:8123/api/residuals
+      body: {"epsilon": 0.15, "min_cluster_size": 3, "verify": true}
+    ← 200  (36998 ms)
+      {"n_data_points": 13, "n_residuals": 6, "residual_dp_ids": ["948d3741a10cfeae", "9fa3b059c9c535d3", "a59d7f58a680d132", "f8838170e43e57a0", "ff14c9ad7ee4f373", "164d8c9df1b02c11"], "clusters": [{"dp_ids": ["948d3741a10cfeae", "9fa3b059c9c535d3", "a59d7f58a680d132", "f8838170e43e57a0", "ff14c9ad7ee4f373", "164d8c9df1b02c11"], "data_points": ["The clinical trial pharmacy confirmed that all medication kits were stored at 4°C.", "The correct storage temperature for the medication kits was 4°C.", "Nurse practitioner Kelly reported that blood pressure readouts remained within normal physiological baselines.", "An independent laboratory audit verified the chemical purity of the active pharmaceutical ingredient was 99.8%.", "Transportation stipends were distributed via prepaid debit cards.", "The trial software dashboard updated its data visualization charts automatically at the end of the week."], "size": 6, "coherence": 0.5054, "abduced_hypothesis": "A clinical trial for a cardiovascular medication was conducted according to its approved protocol without any protocol deviations or operational failures.", "why": "All statements reflect successful adherence to standard operating procedures across storage, safety monitoring, quality control, participant compensation, and data management in a properly executed cardiovascular drug trial.", "explains_fraction": 0.333, "admitted": false, "notes": ["rejected: explains only 33% of cluster"]}], "retrieval_baseline_dp_ids": ["bd93ba5d2a6c5473", "6a89165778c4baec", "58aa273762a14f8c", "f9dc80d256aaf5db"]}
+      · planted cluster: []
+      · cluster: ['d3', 'd3', 'd6', 'd4', 'd8', 'd7'] coherence=0.5054 admitted=False -> A clinical trial for a cardiovascular medication was conducted accordi
+      · residuals=6/13 clusters=1 admitted=0 | cluster_recall=None retrieval_baseline=None
+
+======================================================================================
+  CAPABILITY EVALUATION
+======================================================================================
+
+(a) CONJUNCTION REFUTATION
+  case            recall  pairwise  sets  note
+  MAIN     recall=  —    pairwise_baseline=  —  
+  ADVERSARIAL recall=  —     (reported separately — expected to be worse)
+  CONTROLS false positives: 0 set(s) across 0 control case(s)
+
+(b) MISSING-HYPOTHESIS DETECTION
+  case            recall  purity  retrieval  abduced / note
+  miss_ctrl_01       —       —          —    CONTROL 
+  MAIN     cluster_recall=  —    retrieval_baseline=  —  
+  ADVERSARIAL cluster_recall=  —  
+  CONTROLS false hypotheses: 0 across 1 control case(s)
+
+READ THIS AS: the capability's value is the GAP between the system column
+and its baseline column. A high recall that the baseline also achieves is
+not differentiated value. Abduction text is for human judging, not scored.
+

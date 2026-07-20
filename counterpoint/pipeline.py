@@ -44,6 +44,28 @@ class Pipeline:
                 self.store.add_data_point(dp)
         return doc
 
+    def add_atomic(self, text: str, meta: dict | None = None):
+        """Store `text` as a SINGLE data point, bypassing chunking and atomization.
+
+        For callers whose input is already atomic. Avoids both an LLM call and the
+        real damage of re-atomizing: a single proposition gets split into fragments
+        that lose their referent and dilute any semantic signal.
+        """
+        from .models import Document, Chunk, DataPoint
+        import hashlib
+        meta = meta or {}
+        h = hashlib.sha1(text.encode("utf-8")).hexdigest()[:8]
+        doc = Document(doc_id=f"doc::{h}", name=meta.get("source", "atomic"),
+                       text=text, meta=dict(meta))
+        self.store.add_document(doc)
+        ch = Chunk(chunk_id=f"chunk::{h}", doc_id=doc.doc_id, text=text, order=0,
+                   meta=dict(meta))
+        self.store.add_chunk(ch)
+        dp = DataPoint.make(chunk_id=ch.chunk_id, doc_id=doc.doc_id, text=text,
+                            meta=dict(meta))
+        self.store.add_data_point(dp)
+        return {"doc_id": doc.doc_id, "n_data_points": 1, "data_points": [dp]}
+
     def add_episode(self, text: str, meta: dict | None = None):
         """A pre-atomized single data point (e.g. a YAML 'episode'). Still passes
         through atomization in case the episode bundles several propositions."""
@@ -61,5 +83,6 @@ class Pipeline:
     def matrix(self, progress=None):
         hyps = self.store.hypotheses()
         dps = self.store.data_points()
-        cells = self.scorer.grid(hyps, dps, progress=progress)
+        cells = self.scorer.grid(hyps, dps, progress=progress,
+                                 concurrency=self.s.scoring_concurrency)
         return build_matrix(hyps, dps, cells)

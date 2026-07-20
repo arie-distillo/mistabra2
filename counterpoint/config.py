@@ -68,6 +68,10 @@ class Settings:
     # scoring
     llm_temperature: float = 0.0
     llm_max_retries: int = 4
+    # Parallel LLM calls when scoring a grid. Cells are independent and the calls are
+    # I/O-bound, so this is close to a linear speedup. Serial scoring of a few hundred
+    # cells against a real model takes many minutes and will exceed any HTTP timeout.
+    scoring_concurrency: int = int(os.environ.get("COUNTERPOINT_SCORING_CONCURRENCY", "8"))
     # When set (COUNTERPOINT_FORCE_MOCK=1), the deterministic MockLLM is used even
     # if an API key is present. Takes precedence over a key loaded from .env, which
     # load_dotenv() would otherwise silently re-enable.

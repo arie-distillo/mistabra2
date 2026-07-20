@@ -1,0 +1,913 @@
+- id: conj_01
+  capability: conjunction_refutation
+  control: false
+  adversarial: null
+  domain: industrial_quality
+  hypothesis: Batch 404 failed because the curing temperature exceeded the 200°C maximum limit.
+  data_points:
+  - id: d1
+    text: The main temperature sensor for Batch 404 broke at the start of the cycle and continuously reported
+      a stuck value of 150°C.
+    role: refuting_member
+  - id: d2
+    text: The backup temperature sensor for Batch 404 registered a peak reading of 215°C during the curing
+      cycle.
+    role: refuting_member
+  - id: d3
+    text: Standard Operating Procedure SOP-90 requires that when the main sensor fails, the automated
+      heating elements immediately shut off as a safety override.
+    role: refuting_member
+  - id: d4
+    text: Batch 404 exhibited severe surface blistering and discoloration typical of thermal degradation.
+    role: distractor
+  - id: d5
+    text: Operator Vance logged into the control console at 08:00 AM to monitor Batch 404.
+    role: distractor
+  - id: d6
+    text: 'The raw polymer resin used in Batch 404 was sourced from Lot #882.'
+    role: distractor
+  - id: d7
+    text: A routine calibration of the backup temperature sensor had been completed three days prior to
+      Batch 404's run.
+    role: distractor
+  - id: d8
+    text: Cooling fans in Chamber B operated at 100% capacity throughout the entire duration of the day
+      shift.
+    role: distractor
+  - id: d9
+    text: The ambient humidity inside the production facility remained stable at 45% during Batch 404
+      processing.
+    role: distractor
+  - id: d10
+    text: Batch 403 and Batch 405, processed in the same chamber, met all quality control benchmarks.
+    role: distractor
+  - id: d11
+    text: The heating element power logs indicate a standard current draw of 40 Amps during the first
+      twenty minutes.
+    role: distractor
+  ground_truth:
+    refuting_sets:
+    - - d1
+      - d2
+      - d3
+    missing_hypothesis: null
+    missing_hypothesis_alternatives: []
+    cluster_members: []
+  verification:
+    members_alone: 'd1 alone: A broken main sensor reporting 150°C does not prove the actual temperature
+      didn''t exceed 200°C; d2 alone: A backup sensor reading of 215°C supports the hypothesis rather
+      than refuting it; d3 alone: A safety policy requiring shutdown does not prove the system followed
+      it or that the trigger condition occurred.'
+    conjunction: Together, d1 and d3 establish that the heating elements must have immediately shut off
+      at the start of the cycle due to the main sensor breaking. Since the heaters were shut off, the
+      actual temperature could not have risen to the 215°C reported by the backup sensor in d2, thereby
+      proving the backup reading is anomalous and the hypothesis is false.
+    corpus_specific_fact: SOP-90 safety override policy requiring immediate automated heater shutdown
+      when the main sensor fails.
+    not_retrievable: null
+- id: conj_02
+  capability: conjunction_refutation
+  control: false
+  adversarial: neutral_members
+  domain: logistics_operations
+  hypothesis: Shipment TS-99 was delayed because it was routed through the high-congestion sorting hub
+    in Chicago.
+  data_points:
+  - id: d1
+    text: Shipment TS-99 was transported exclusively using the electric vehicle fleet designated for short-haul
+      operations.
+    role: refuting_member
+  - id: d2
+    text: The maximum operating range of the short-haul electric vehicle fleet is strictly capped at 150
+      miles on a single charge.
+    role: refuting_member
+  - id: d3
+    text: The closest Chicago sorting hub is located 410 miles away from the origin facility of Shipment
+      TS-99.
+    role: refuting_member
+  - id: d4
+    text: Shipment TS-99 contained temperature-sensitive biomedical samples requiring continuous refrigeration.
+    role: distractor
+  - id: d5
+    text: Chicago hubs reported an average processing delay of 14 hours per package due to winter blizzards.
+    role: distractor
+  - id: d6
+    text: The electronic manifest for Shipment TS-99 was generated at 04:15 AM on Tuesday.
+    role: distractor
+  - id: d7
+    text: Driver K. Patel was assigned to the transport detail for the TS series shipments this week.
+    role: distractor
+  - id: d8
+    text: Route optimization software AlphaLog v4.2 encountered a database timeout error during Tuesday's
+      scheduling routine.
+    role: distractor
+  - id: d9
+    text: Long-haul diesel trucks are required to undergo inspection at the state line weigh stations.
+    role: distractor
+  - id: d10
+    text: Shipment TS-99 arrived at its ultimate destination exactly 36 hours past its estimated delivery
+      window.
+    role: distractor
+  - id: d11
+    text: The battery charging stations at the origin facility were upgraded to 150kW fast-chargers last
+      month.
+    role: distractor
+  ground_truth:
+    refuting_sets:
+    - - d1
+      - d2
+      - d3
+    missing_hypothesis: null
+    missing_hypothesis_alternatives: []
+    cluster_members: []
+  verification:
+    members_alone: 'd1 alone: Knowing it used short-haul electric vehicles is neutral; they could theoretically
+      charge mid-way or be carried; d2 alone: An abstract 150-mile vehicle limitation is completely neutral
+      regarding Chicago routing; d3 alone: Chicago being 410 miles away is neutral; long-haul shipments
+      travel that distance routinely.'
+    conjunction: 'Together they create an absolute geometric impossibility: the vehicle assigned (d1)
+      cannot travel further than 150 miles (d2), but reaching the Chicago hub requires traveling 410 miles
+      (d3). Because mid-route vehicle swaps for individual shipments are not part of this rigid fleet
+      architecture, the shipment could not have visited Chicago.'
+    corpus_specific_fact: The specific operating range constraint (150 miles) of the short-haul EV fleet
+      and the physical distance (410 miles) from the origin facility.
+    not_retrievable: null
+- id: conj_03
+  capability: conjunction_refutation
+  control: false
+  adversarial: null
+  domain: financial_compliance
+  hypothesis: Trader J. Vance executed an unauthorized transaction because he bypassed the multi-signature
+    approval rule.
+  data_points:
+  - id: d1
+    text: The transaction log shows J. Vance initiated the trade sequence using Console Terminal 4.
+    role: refuting_member
+  - id: d2
+    text: Console Terminal 4 has an isolated hardware malfunction that completely prevents it from transmitting
+      any data packets across the network.
+    role: refuting_member
+  - id: d3
+    text: The compliance database successfully recorded a fully approved, timestamped transaction entry
+      for the trade.
+    role: refuting_member
+  - id: d4
+    text: J. Vance's personal cryptographic key card was scanned at the main security turnstile at 09:02
+      AM.
+    role: distractor
+  - id: d5
+    text: The multi-signature rule dictates that any trade exceeding $5,000,000 requires authentication
+      from two distinct directors.
+    role: distractor
+  - id: d6
+    text: The risk management dashboard displayed a red alert status for cross-border equities at 10:15
+      AM.
+    role: distractor
+  - id: d7
+    text: Compliance Director Sarah Jenkins was out of the office attending an industry conference during
+      the week of the trade.
+    role: distractor
+  - id: d8
+    text: The trade involved the purchase of 50,000 shares of tech sector exchange-traded funds.
+    role: distractor
+  - id: d9
+    text: Console Terminal 4 was scheduled for decommissioning and replacement by the IT department next
+      Friday.
+    role: distractor
+  - id: d10
+    text: Audit logs confirm that no administrative override keys were initialized during the morning
+      trading session.
+    role: distractor
+  ground_truth:
+    refuting_sets:
+    - - d1
+      - d2
+      - d3
+    missing_hypothesis: null
+    missing_hypothesis_alternatives: []
+    cluster_members: []
+  verification:
+    members_alone: 'd1 alone: Initiating a trade sequence on Terminal 4 is neutral to whether he bypassed
+      the approval rule; d2 alone: A hardware malfunction on an isolated terminal doesn''t imply Vance
+      didn''t bypass rules elsewhere; d3 alone: A recorded, approved trade entry is compatible with Vance
+      bypassing the rule via an exploit or spoofing.'
+    conjunction: If the trade was initiated on Terminal 4 (d1), but Terminal 4 was incapable of broadcasting
+      data over the network due to hardware isolation (d2), then no data from Terminal 4 could have reached
+      the central compliance architecture. The existence of a recorded entry in the central database (d3)
+      means the trade actually executed must have originated from a completely different source, refuting
+      the claim that Vance executed it via Terminal 4.
+    corpus_specific_fact: The specific network-isolation hardware malfunction affecting Console Terminal
+      4.
+    not_retrievable: null
+- id: conj_04
+  capability: conjunction_refutation
+  control: false
+  adversarial: near_miss
+  domain: clinical_trials
+  hypothesis: Patient 14 experienced severe acute migraines due to an adverse allergic reaction to the
+    experimental drug Paxilod.
+  data_points:
+  - id: d1
+    text: Patient 14 was assigned to Group C, which received the active formulation of experimental drug
+      Paxilod.
+    role: distractor
+  - id: d2
+    text: Patient 14 was inadvertently given a blister pack from Batch X-9, which contained only inert
+      sugar pills.
+    role: refuting_member
+  - id: d3
+    text: The clinic's double-blind dispensing log notes that all blister packs marked Batch X-9 were
+      active drug formulations.
+    role: distractor
+  - id: d4
+    text: The pharmacy inventory audit discovered that the label printer had switched batches, meaning
+      Batch X-9 was verified to be 100% placebo.
+    role: refuting_member
+  - id: d5
+    text: Patient 14 reported the onset of throbbing cranial pain exactly 45 minutes after ingestion.
+    role: distractor
+  - id: d6
+    text: A blood draw from Patient 14 at hour 2 showed zero detectable trace levels of Paxilod or its
+      metabolic derivatives.
+    role: distractor
+  - id: d7
+    text: The clinical protocol states that Paxilod molecules bind instantly to plasma proteins and remain
+      detectable for 72 hours.
+    role: distractor
+  - id: d8
+    text: Patient 14 has a documented prior medical history of chronic tension headaches and seasonal
+      pollen allergies.
+    role: distractor
+  - id: d9
+    text: Nurse practitioner Davis recorded that Patient 14's vitals were entirely stable during the baseline
+      check.
+    role: distractor
+  - id: d10
+    text: Concomitant medications for Patient 14 included standard daily multi-vitamins and a low-dose
+      aspirin.
+    role: distractor
+  ground_truth:
+    refuting_sets:
+    - - d2
+      - d4
+    missing_hypothesis: null
+    missing_hypothesis_alternatives: []
+    cluster_members: []
+  verification:
+    members_alone: 'd2 alone: The statement that the pack contained sugar pills is contradicted by d3
+      within the text landscape, making it non-definitive on its own; d4 alone: The fact that Batch X-9
+      was a placebo does not refute the hypothesis unless we know Patient 14 actually received Batch X-9
+      (d2).'
+    conjunction: 'The near-miss aspect plays on d3 and d6/d7 trying to trick a system into an easy chemical
+      refutation. The true, minimal conjunction is d2 and d4: d2 says the patient got Batch X-9, and d4
+      proves definitively that Batch X-9 was a placebo. Together, they establish the patient took a placebo,
+      completely refuting an allergic reaction to the active drug.'
+    corpus_specific_fact: The inventory audit discovery that the printer error mislabeled the placebo
+      batch as Batch X-9.
+    not_retrievable: null
+- id: conj_05
+  capability: conjunction_refutation
+  control: false
+  adversarial: null
+  domain: information_security
+  hypothesis: The database leak occurred because an external hacker exploited an unpatched remote code
+    execution vulnerability in the public web server.
+  data_points:
+  - id: d1
+    text: The public web server was physically disconnected from the local network and placed in dark
+      storage at 06:00 AM.
+    role: refuting_member
+  - id: d2
+    text: The main network perimeter firewall rules were updated to block all external inbound traffic
+      starting at 07:00 AM.
+    role: refuting_member
+  - id: d3
+    text: The central file server transaction logs show the database extraction occurred precisely at
+      08:30 AM.
+    role: refuting_member
+  - id: d4
+    text: The security information and event management system recorded no anomalous outbound data payloads
+      from the web server.
+    role: refuting_member
+  - id: d5
+    text: An internal system audit verified that the database administrative password was changed to a
+      24-character string last month.
+    role: refuting_member
+  - id: d6
+    text: System Administrator Torres logged in via a local console terminal at 08:00 AM to perform routine
+      backups.
+    role: distractor
+  - id: d7
+    text: The public web server ran an operating system version that had reached its official end-of-life
+      cycle six months prior.
+    role: distractor
+  - id: d8
+    text: A vulnerability scan conducted on the first of the month highlighted three critical bugs in
+      the web server framework.
+    role: distractor
+  - id: d9
+    text: The organization's data protection policy mandates that all database exports must be encrypted
+      using AES-256.
+    role: distractor
+  - id: d10
+    text: Intrusion detection signatures for known remote code execution exploits were updated in the
+      security appliance last Tuesday.
+    role: distractor
+  - id: d11
+    text: The database contained approximately 500,000 records of customer profile information.
+    role: distractor
+  - id: d12
+    text: An external threat intelligence briefing warned of active exploitation attempts targeting regional
+      corporations.
+    role: distractor
+  ground_truth:
+    refuting_sets:
+    - - d1
+      - d2
+      - d3
+      - d4
+      - d5
+    missing_hypothesis: null
+    missing_hypothesis_alternatives: []
+    cluster_members: []
+  verification:
+    members_alone: 'd1 alone: Disconnecting the web server at 06:00 AM doesn''t prove a leak didn''t happen
+      earlier or via another server; d2 alone: Blocking external inbound traffic at 07:00 AM doesn''t
+      rule out an attack prior to 07:00 AM; d3 alone: Knowing the exact time of the extraction (08:30
+      AM) does not tell us the vector used; d4 alone: A lack of anomalous logs on the web server might
+      just mean the hacker cleared the logs; d5 alone: A strong database password doesn''t protect against
+      a remote code execution exploit on the application layer.'
+    conjunction: 'Together, d1, d2, d3, d4, and d5 form a bulletproof chain: the extraction happened at
+      08:30 AM (d3), at which time the public web server was physically unplugged in storage (d1) and
+      the perimeter firewall was blocking all inbound traffic (d2), while the web server logs confirm
+      no compromise activity (d4) and the database itself had reinforced authentication controls (d5).
+      This collectively forces the refutation of the external web exploit vector.'
+    corpus_specific_fact: The specific overlapping timeline of physical server decommissioning (06:00
+      AM), firewall lockdown (07:00 AM), and the actual database extraction event (08:30 AM).
+    not_retrievable: null
+- id: conj_06
+  capability: conjunction_refutation
+  control: false
+  adversarial: null
+  domain: scientific_research
+  hypothesis: The deep-sea probe failed because its lithium-ion battery pack ruptured due to extreme hydrostatic
+    pressure at the trench floor.
+  data_points:
+  - id: d1
+    text: The probe's pressure vessel hull completely imploded during its descent at a depth of 4,000
+      meters.
+    role: refuting_member
+  - id: d2
+    text: The internal telemetry transmitter was crushed instantly during the structural hull collapse.
+    role: refuting_member
+  - id: d3
+    text: The lithium-ion battery pack was housed inside a separate, solid titanium auxiliary protective
+      pod.
+    role: refuting_member
+  - id: d4
+    text: The auxiliary titanium protective pod is rated to withstand pressures up to 12,000 meters depth
+      without deformation.
+    role: refuting_member
+  - id: d5
+    text: The bottom floor of the target marine trench is located at a measured depth of 10,500 meters.
+    role: refuting_member
+  - id: d6
+    text: The probe was painted with a specialized highly reflective yellow epoxy coating for easy ocean-surface
+      recovery.
+    role: distractor
+  - id: d7
+    text: An oceanographic research vessel deployed the probe at precisely 14:00 hours UTC under clear
+      weather conditions.
+    role: distractor
+  - id: d8
+    text: The primary battery pack had undergone twenty full charge-discharge cycles during laboratory
+      pre-testing.
+    role: distractor
+  - id: d9
+    text: The scientific payload included a high-resolution digital camera and a micro-salinity sensor
+      array.
+    role: distractor
+  - id: d10
+    text: Sonar tracking lost the acoustic ping from the probe 45 minutes after deployment.
+    role: distractor
+  - id: d11
+    text: The battery management system utilized an open-source real-time operating system kernel.
+    role: distractor
+  - id: d12
+    text: Marine biologists noted an abundance of bioluminescent organisms in the upper water column.
+    role: distractor
+  ground_truth:
+    refuting_sets:
+    - - d1
+      - d2
+      - d3
+      - d4
+      - d5
+    missing_hypothesis: null
+    missing_hypothesis_alternatives: []
+    cluster_members: []
+  verification:
+    members_alone: 'd1 alone: Implosion at 4,000 meters doesn''t inherently mean the battery didn''t rupture
+      from pressure later or elsewhere; d2 alone: An instantly crushed transmitter explains lost contact
+      but doesn''t tell us what happened to the battery; d3 alone: The battery being in a titanium pod
+      is neutral unless we know the strength of that pod; d4 alone: The pod''s 12,000-meter rating doesn''t
+      disprove failure unless we know the trench depth and housing configuration; d5 alone: The trench
+      depth of 10,500 meters is purely geographical data.'
+    conjunction: The conjunction of all five statements refutes the hypothesis. If the main hull imploded
+      and telemetry stopped at 4,000 meters (d1, d2) during descent to a 10,500-meter floor (d5), the
+      probe never reached the trench floor. Furthermore, because the battery was inside an auxiliary pod
+      (d3) that can survive 12,000 meters of pressure (d4), hydrostatic pressure could never have caused
+      the battery pack to rupture at any point in the journey.
+    corpus_specific_fact: The engineering specification rating of the auxiliary titanium pod (12,000 meters)
+      relative to the specific trench depth (10,500 meters) and hull failure depth (4,000 meters).
+    not_retrievable: null
+- id: conj_ctrl_01
+  capability: conjunction_refutation
+  control: true
+  adversarial: null
+  domain: industrial_quality
+  hypothesis: The conveyor belt snapped because it was overloaded beyond its 500 kg operational weight
+    capacity.
+  data_points:
+  - id: d1
+    text: The automated scale at the loading zone recorded a peak cargo weight of 620 kg at 10:30 AM.
+    role: distractor
+  - id: d2
+    text: Conveyor maintenance logs show the rubber belt material was past its recommended replacement
+      date by three months.
+    role: distractor
+  - id: d3
+    text: Operator Miller reported hearing a loud grinding noise coming from the drive motor assembly
+      prior to the incident.
+    role: distractor
+  - id: d4
+    text: The facility environmental system recorded a temporary power surge in the main grid at 10:31
+      AM.
+    role: distractor
+  - id: d5
+    text: The maximum rated capacity printed in the manufacturer's user manual is exactly 500 kg.
+    role: distractor
+  - id: d6
+    text: A visual inspection after the snap revealed deep lacerations along the underside tracking tracks
+      of the belt.
+    role: distractor
+  - id: d7
+    text: The cargo being transported at the time consisted entirely of standard cardboard boxes containing
+      metal fasteners.
+    role: distractor
+  - id: d8
+    text: Shift supervisor Chang signed off on the daily throughput manifest at the conclusion of the
+      morning shift.
+    role: distractor
+  ground_truth:
+    refuting_sets: []
+    missing_hypothesis: null
+    missing_hypothesis_alternatives: []
+    cluster_members: []
+  verification:
+    members_alone: All data points are either neutral or explicitly support the possibility of overloading
+      (e.g., d1 shows weight reached 620 kg, which is greater than the 500 kg capacity in d5).
+    conjunction: There is no combination of data points that contradicts the hypothesis. The data consistently
+      points toward a standard mechanical failure under potential stress conditions.
+    corpus_specific_fact: None.
+    not_retrievable: null
+- id: conj_ctrl_02
+  capability: conjunction_refutation
+  control: true
+  adversarial: null
+  domain: logistics_operations
+  hypothesis: Flight Cargo-77 left behind container BX-40 because the aircraft exceeded its strict maximum
+    takeoff weight limit.
+  data_points:
+  - id: d1
+    text: Flight Cargo-77 departed the runway with an aggregate payload total of 142,000 kilograms.
+    role: distractor
+  - id: d2
+    text: The airport weather station documented crosswinds of 15 knots at the exact time of aircraft
+      departure.
+    role: distractor
+  - id: d3
+    text: Container BX-40 remained staged on the outdoor tarmac loading ramp until 11:45 PM.
+    role: distractor
+  - id: d4
+    text: The aircraft flight manual dictates an absolute maximum takeoff weight limit of 140,000 kilograms
+      under current thermal conditions.
+    role: distractor
+  - id: d5
+    text: Ground crew foreman Davis noticed a hydraulic fluid seep near the rear landing gear assembly
+      during pre-flight checks.
+    role: distractor
+  - id: d6
+    text: The fuel manifest indicates that the aircraft tanks were filled to 95% total capacity prior
+      to taxiing.
+    role: distractor
+  - id: d7
+    text: Container BX-40 was packed with industrial high-density lead batteries weighing a total of 3,500
+      kilograms.
+    role: distractor
+  - id: d8
+    text: Air Traffic Control authorized Flight Cargo-77 for immediate departure via Runway 9-Left.
+    role: distractor
+  ground_truth:
+    refuting_sets: []
+    missing_hypothesis: null
+    missing_hypothesis_alternatives: []
+    cluster_members: []
+  verification:
+    members_alone: All statements are consistent with the hypothesis. In fact, d1 and d4 show the plane
+      was already over its maximum takeoff weight limit (142,000 kg vs 140,000 kg), perfectly explaining
+      why an extra heavy container (d7) was left behind.
+    conjunction: No refuting conjunction exists. The corpus reinforces the validity of the hypothesis.
+    corpus_specific_fact: None.
+    not_retrievable: null
+- id: miss_01
+  capability: missing_hypothesis
+  control: false
+  adversarial: null
+  domain: industrial_quality
+  data_points:
+  - id: d1
+    text: The catalyst batch tracking sheet shows an expiration date of December 2027, which is far in
+      the future.
+    role: distractor
+  - id: d2
+    text: The digital control console printout verified the mixer maintained a steady rate of 450 RPM
+      throughout the cycle.
+    role: distractor
+  - id: d3
+    text: A physical inspection revealed that the main overhead clean-room ventilation intake valve was
+      completely blocked by plastic shipping wrap.
+    role: cluster_member
+  - id: d4
+    text: Differential pressure gauges inside the processing clean-room registered a sudden drop below
+      the mandatory 15 Pascal clean threshold.
+    role: cluster_member
+  - id: d5
+    text: Particulate sensors stationed directly above the reaction vat recorded a ten-fold spike in ambient
+      airborne dust concentrations.
+    role: cluster_member
+  - id: d6
+    text: The batch quality report noted the presence of microscopic airborne cellulose fibers embedded
+      uniformly inside the cured product.
+    role: cluster_member
+  - id: d7
+    text: Operator Martinez logged a standard pre-check clearance at the start of the morning shift.
+    role: distractor
+  - id: d8
+    text: The raw chemical base ingredients were stored in airtight stainless steel cylinders prior to
+      dispensing.
+    role: distractor
+  - id: d9
+    text: A maintenance engineer replaced the primary hydraulic seals on the mixer drive shaft last Tuesday.
+    role: distractor
+  - id: d10
+    text: The facility ambient temperature controller maintained a constant 21°C throughout the production
+      run.
+    role: distractor
+  ground_truth:
+    refuting_sets: []
+    missing_hypothesis: The batch failed due to environmental contamination caused by a failure or blockage
+      in the clean-room ventilation system.
+    missing_hypothesis_alternatives:
+    - Contaminants entered the product because the clean-room ventilation intake was blocked.
+    - Airborne dust and fiber contamination spoiled the batch due to a drop in clean-room pressure.
+    cluster_members:
+    - d3
+    - d4
+    - d5
+    - d6
+  verification:
+    members_alone: null
+    conjunction: null
+    corpus_specific_fact: null
+    not_retrievable: The given hypotheses focus strictly on intrinsic chemical process parameters (catalyst
+      age, mixing mechanics). The planted cluster (d3, d4, d5, d6) deals entirely with facility environmental
+      dynamics (clean-room pressure, ventilation blockages, airborne fiber particulates). A keyword or
+      semantic similarity search based on 'catalyst', 'mixing', or 'speed' would never surface terms like
+      'ventilation intake', 'Pascal pressure', or 'cellulose fibers'.
+  given_hypotheses:
+  - The batch failed because the chemical catalyst had expired.
+  - The batch failed because the mixing speed was set too low.
+- id: miss_02
+  capability: missing_hypothesis
+  control: false
+  adversarial: multi_hypothesis_fit
+  domain: financial_compliance
+  data_points:
+  - id: d1
+    text: All outbound API transactions from Account A matched the registered hardware MAC address of
+      the owner's primary device.
+    role: distractor
+  - id: d2
+    text: The transaction history shows no small fractional transfers or rapid splitting of funds across
+      intermediary shell accounts.
+    role: distractor
+  - id: d3
+    text: Account A changed its official corporate registration country code three distinct times within
+      a short 48-hour window.
+    role: cluster_member
+  - id: d4
+    text: The compliance system flag showed that Account A altered its primary beneficial ownership names
+      on the ledger right before large wire transfers.
+    role: cluster_member
+  - id: d5
+    text: Legal incorporation documents uploaded to the verification portal used identical typo patterns
+      across three supposedly independent entities.
+    role: cluster_member
+  - id: d6
+    text: The registered phone number for Account A was modified to routing profiles based in three separate
+      offshore banking jurisdictions.
+    role: cluster_member
+  - id: d7
+    text: The account owner accessed the online web banking dashboard via a standard business VPN service
+      provider.
+    role: distractor
+  - id: d8
+    text: Account A maintained an average monthly balance of $250,000 during the preceding fiscal calendar
+      year.
+    role: distractor
+  - id: d9
+    text: A customer service chat log shows the user requested information regarding standard international
+      wire fees.
+    role: distractor
+  - id: d10
+    text: The compliance officer signed off on a routine periodic review of Account A six months ago.
+    role: distractor
+  ground_truth:
+    refuting_sets: []
+    missing_hypothesis: Account A committed corporate identity fraud or entity manipulation to bypass
+      Know Your Customer (KYC) compliance barriers.
+    missing_hypothesis_alternatives:
+    - The account holder used fraudulent corporate shell modifications and entity hopping to evade regulatory
+      tracking.
+    - Account A engaged in systemic falsification of registration data and beneficial ownership records.
+    cluster_members:
+    - d3
+    - d4
+    - d5
+    - d6
+  verification:
+    members_alone: null
+    conjunction: null
+    corpus_specific_fact: null
+    not_retrievable: The given hypotheses center on transaction mechanics (layering/splitting) or technical
+      cyber-intrusions (phishing/API compromise). The planted cluster focuses entirely on corporate documentation
+      anomalies, registry changes, and entity identity shifting (KYC evasion). These terms share zero
+      semantic overlap with network hacking or monetary layering, ensuring a similarity search would completely
+      miss the connection.
+  given_hypotheses:
+  - Account A engaged in classic structural layering to obscure the origin of illicit funds.
+  - Account A was hijacked by an external phishing actor using compromised API tokens.
+- id: miss_03
+  capability: missing_hypothesis
+  control: false
+  adversarial: coherent_but_irrelevant
+  domain: logistics_operations
+  data_points:
+  - id: d1
+    text: The IT network infrastructure logs show 100% uptime and normal packet traffic volumes on the
+      routing servers.
+    role: distractor
+  - id: d2
+    text: The primary distribution depot fuel reserves were fully replenished to 50,000 gallons early
+      that morning.
+    role: distractor
+  - id: d3
+    text: A software update pushed to the fleet's handheld GPS units at 05:00 AM caused an unhandled memory
+      leak that froze the terminal screens.
+    role: cluster_member
+  - id: d4
+    text: Drivers reported that their delivery handheld navigation tablets became completely unresponsive
+      to touch inputs after booting up.
+    role: cluster_member
+  - id: d5
+    text: The mobile hardware technician logged 45 individual service tickets regarding frozen terminal
+      user interfaces within a single hour.
+    role: cluster_member
+  - id: d6
+    text: The firmware version manifest indicates that all handheld units received the patch package 'OTA-v9.1'
+      overnight.
+    role: cluster_member
+  - id: d7
+    text: The office coffee machine vendor arrived at 08:00 AM to perform routine maintenance and descaling.
+    role: cluster_member
+  - id: d8
+    text: The facility breakroom refrigerator thermostat failed, causing the internal temperature to rise
+      to 15°C.
+    role: cluster_member
+  - id: d9
+    text: Three breakroom chairs were moved to the main hallway during the floor waxing routine.
+    role: cluster_member
+  - id: d10
+    text: The delivery trucks were washed and detailed by an external contractor over the weekend.
+    role: distractor
+  - id: d11
+    text: Driver Smith renewed his commercial driver's license certification card two days prior to the
+      incident.
+    role: distractor
+  ground_truth:
+    refuting_sets: []
+    missing_hypothesis: The fleet stalled because an overnight software update (OTA-v9.1) caused the drivers'
+      handheld GPS navigation units to freeze.
+    missing_hypothesis_alternatives:
+    - A critical bug in the handheld device firmware patch disabled driver navigation capabilities across
+      the fleet.
+    cluster_members:
+    - d3
+    - d4
+    - d5
+    - d6
+  verification:
+    members_alone: null
+    conjunction: null
+    corpus_specific_fact: null
+    not_retrievable: The adversarial 'coherent_but_irrelevant' aspect is built into d7, d8, and d9, which
+      form a distinct, coherent cluster about breakroom/facility maintenance anomalies that are entirely
+      irrelevant to the core operations issue. The true target cluster (d3-d6) involves client-side mobile
+      firmware crashing, which is completely distinct from server-side cyber-attacks or physical fuel
+      logistics. A similarity search targeting server issues or fuel supply would not pull up handheld
+      firmware or UI freezes.
+  given_hypotheses:
+  - The delivery fleet stalled because the central routing server suffered a distributed denial-of-service
+    attack.
+  - The delivery fleet stalled due to a regional fuel shortage at the primary distribution depot.
+- id: miss_04
+  capability: missing_hypothesis
+  control: false
+  adversarial: null
+  domain: information_security
+  data_points:
+  - id: d1
+    text: The perimeter network firewall logs show all external inbound SSH connection requests were dropped
+      cleanly.
+    role: distractor
+  - id: d2
+    text: The endpoint security monitor verified that the physical USB port blocking policy was active
+      and recorded zero insertion events.
+    role: distractor
+  - id: d3
+    text: An administrative user account was suddenly created on the corporate printer server without
+      a corresponding IT service ticket.
+    role: cluster_member
+  - id: d4
+    text: The print spooler directory cache recorded an anomalous 80-gigabyte temporary storage file containing
+      compiled database tables.
+    role: cluster_member
+  - id: d5
+    text: The facility high-volume office printer ran continuously for three hours straight during the
+      middle of the night.
+    role: cluster_member
+  - id: d6
+    text: Physical security logs show the cleaning staff cleared out 14 bins of shredded paper scrap from
+      the main copy room next morning.
+    role: cluster_member
+  - id: d7
+    text: The corporate email server processed standard outbound traffic matching normal daytime communication
+      profiles.
+    role: distractor
+  - id: d8
+    text: A software developer updated the staging database schema to include three new indexes for search
+      optimization.
+    role: distractor
+  - id: d9
+    text: The building maintenance team replaced a blown fluorescent light bulb in the primary data center
+      corridor.
+    role: distractor
+  - id: d10
+    text: The network switch in the finance department was rebooted for a routine security patch deployment
+      at midnight.
+    role: distractor
+  ground_truth:
+    refuting_sets: []
+    missing_hypothesis: The data was exfiltrated by exploiting the office network printer server infrastructure
+      to physically print out the database contents.
+    missing_hypothesis_alternatives:
+    - An internal actor compromised the print server to generate massive physical paper copies of sensitive
+      data.
+    cluster_members:
+    - d3
+    - d4
+    - d5
+    - d6
+  verification:
+    members_alone: null
+    conjunction: null
+    corpus_specific_fact: null
+    not_retrievable: 'The provided hypotheses are typical digital/cyber vectors (SSH tunneling, USB storage
+      theft). The planted cluster (d3, d4, d5, d6) leverages an obscure physical-output pivot: hijacking
+      the print server to output tens of thousands of physical sheets of paper. Because standard security
+      terminology separates network tunnels and USB devices from hardware office printers, basic semantic
+      or keyword retrieval will completely miss this unusual attack path.'
+  given_hypotheses:
+  - The data exfiltration was achieved via an compromised SSH tunnel from a remote IP address.
+  - The data exfiltration occurred when an employee physically copied files onto a decrypted USB flash
+    drive.
+- id: miss_ctrl_01
+  capability: missing_hypothesis
+  control: true
+  adversarial: null
+  domain: clinical_trials
+  data_points:
+  - id: d1
+    text: Patient diary entries frequently mentioned severe nausea, stomach cramping, and vomiting shortly
+      after taking the pill.
+    role: cluster_member
+  - id: d2
+    text: Clinical coordinators noted that moving the appointment window from 08:00 AM to 10:00 AM resolved
+      80% of scheduling complaints.
+    role: cluster_member
+  - id: d3
+    text: The clinical trial pharmacy confirmed that all medication kits were stored at the correct temperature
+      of 4°C.
+    role: distractor
+  - id: d4
+    text: An independent laboratory audit verified the chemical purity of the active pharmaceutical ingredient
+      was 99.8%.
+    role: distractor
+  - id: d5
+    text: The institutional review board approved the revised patient consent form amendment without any
+      delays.
+    role: distractor
+  - id: d6
+    text: Nurse practitioner Kelly reported that blood pressure readouts remained within normal physiological
+      baselines.
+    role: distractor
+  - id: d7
+    text: The trial software dashboard updated its data visualization charts automatically at the end
+      of the week.
+    role: distractor
+  - id: d8
+    text: Transportation stipends were distributed to all active study participants via prepaid debit
+      cards.
+    role: distractor
+  ground_truth:
+    refuting_sets: []
+    missing_hypothesis: null
+    missing_hypothesis_alternatives: []
+    cluster_members: []
+  verification:
+    members_alone: null
+    conjunction: null
+    corpus_specific_fact: null
+    not_retrievable: The data points in the corpus map directly and comprehensively to the two hypotheses
+      provided (d1 supports Hypothesis 1; d2 supports Hypothesis 2). There are no unexplained anomalies,
+      leftover data clusters, or hidden patterns. A system that attempts to abduce a new hypothesis here
+      is fabricating an unnecessary cause.
+  given_hypotheses:
+  - Patient dropouts surged because the drug caused severe gastrointestinal distress.
+  - Patient dropouts surged because the daily clinic check-in schedule conflicted with standard commuting
+    hours.
+- id: miss_ctrl_02
+  capability: missing_hypothesis
+  control: true
+  adversarial: null
+  domain: scientific_research
+  data_points:
+  - id: d1
+    text: The internal storage tank telemetry showed the liquid helium levels dropped to zero liters at
+      midnight.
+    role: cluster_member
+  - id: d2
+    text: The electrical current logs for the secondary mirror alignment array showed a massive spike
+      followed by zero power draw.
+    role: cluster_member
+  - id: d3
+    text: The astronomical observatory dome rotation mechanism operated smoothly along its circular steel
+      tracks.
+    role: distractor
+  - id: d4
+    text: The weather radar recorded clear skies and extremely low atmospheric water vapor column measurements
+      over the summit.
+    role: distractor
+  - id: d5
+    text: The digital image sensors captured standard test patterns using the secondary visible-light
+      optical path.
+    role: distractor
+  - id: d6
+    text: A software patch for the main telescope operating system was deferred until the next planned
+      maintenance window.
+    role: distractor
+  - id: d7
+    text: The backup diesel power generator underwent its monthly automated load testing sequence successfully.
+    role: distractor
+  - id: d8
+    text: The research team published their preliminary data collection plan in the internal department
+      wiki.
+    role: distractor
+  ground_truth:
+    refuting_sets: []
+    missing_hypothesis: null
+    missing_hypothesis_alternatives: []
+    cluster_members: []
+  verification:
+    members_alone: null
+    conjunction: null
+    corpus_specific_fact: null
+    not_retrievable: The corpus contains explicit, clear evidence validating both of the given hypotheses
+      (d1 documents the cryogenic leak; d2 documents the actuator motor burnout). The remaining data points
+      are standard, domain-appropriate distractors representing normal operations. Because the hypothesis
+      set is fully complete relative to the data, proposing a new hypothesis constitutes an architectural
+      hallucination.
+  given_hypotheses:
+  - The telescope calibration failed because the cryogenic cooling fluid leaked out completely.
+  - The telescope calibration failed because the secondary mirror actuator motor burned out.

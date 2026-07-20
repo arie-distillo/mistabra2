@@ -40,6 +40,7 @@ class DocIn(BaseModel):
 class EpisodeIn(BaseModel):
     content: str
     meta: dict = {}
+    atomize: bool = True   # False when the caller already supplies atomic statements
 
 
 class HypIn(BaseModel):
@@ -64,13 +65,24 @@ def _new_pipeline(in_memory: bool = False) -> Pipeline:
 
 
 @app.post("/api/reset")
-def reset(in_memory: bool = True):
-    """Clear all corpus and hypotheses (and, for :memory:, the score cache).
-    A dev/test affordance so the system can be driven from an empty state purely
-    through the API. `in_memory=true` swaps to a throwaway in-memory DB."""
+def reset(in_memory: bool = True, keep_cache: bool = False):
+    """Clear corpus and hypotheses so the system can be driven from an empty state.
+
+    keep_cache=true clears only the corpus and PRESERVES the lift/prior caches, so a
+    re-run of the same texts costs no LLM calls. Use this with a file-backed
+    COUNTERPOINT_CACHE_DB_PATH to make repeated evaluation runs nearly free.
+    in_memory=true (the default) swaps in a throwaway DB, discarding everything."""
     global pipeline
+    if keep_cache:
+        pipeline.store.clear_corpus()
+        return {"status": "reset", "in_memory": False, "kept_cache": True}
     pipeline = _new_pipeline(in_memory=in_memory)
-    return {"status": "reset", "in_memory": in_memory}
+    if not in_memory:
+        # A fresh Store object does NOT empty an existing FILE database — it just
+        # reopens it. Without this, a file-backed reset silently kept every previous
+        # corpus, so cases accumulated into one another.
+        pipeline.store.clear_all()
+    return {"status": "reset", "in_memory": in_memory, "kept_cache": False}
 
 
 # --------------------------------------------------------------- API routes
@@ -83,12 +95,22 @@ def add_document(d: DocIn):
 
 
 @app.post("/api/episodes")
-def add_episode(e: EpisodeIn):
-    doc = pipeline.add_episode(e.content, e.meta)
-    dps = [dp for dp in pipeline.store.data_points() if dp.doc_id == doc.doc_id]
-    return {"doc_id": doc.doc_id, "n_data_points": len(dps)}
+def add_episode(inp: EpisodeIn):
+    """Add one episode. By default the text is atomized into data points.
 
-
+    atomize=false stores the text AS a single data point. Use this when the caller
+    already supplies atomic statements (e.g. authored evaluation cases): re-atomizing
+    them shreds single propositions into fragments like "A physical inspection was
+    conducted.", which carry no information and pollute clustering.
+    """
+    if inp.atomize:
+        doc = pipeline.add_episode(inp.content, meta=inp.meta)
+        dps = [dp for dp in pipeline.store.data_points() if dp.doc_id == doc.doc_id]
+        return {"doc_id": doc.doc_id, "n_data_points": len(dps),
+                "data_points": [dp.text for dp in dps]}
+    res = pipeline.add_atomic(inp.content, meta=inp.meta)
+    return {"doc_id": res["doc_id"], "n_data_points": 1,
+            "data_points": [inp.content]}
 @app.post("/api/hypotheses")
 def add_hypothesis(h: HypIn):
     hyp = pipeline.add_hypothesis(h.text, h.context_summary)
@@ -139,6 +161,107 @@ def hypothesis_detail(hyp_id: str):
     }
 
 
+class RefuteIn(BaseModel):
+    max_size: int = 4
+    n_seeds: int = 3
+    shortlist: int = 20
+
+
+class ResidualIn(BaseModel):
+    epsilon: float = 0.15
+    min_cluster_size: int = 3
+    # Cosine distance at which agglomerative clustering stops merging. Lower = tighter,
+    # more clusters. Clustering makes NO LLM calls, so this can be swept for free
+    # (set verify=false to skip abduction entirely while tuning).
+    distance_threshold: float = 0.6
+    verify: bool = True
+
+
+@app.post("/api/hypotheses/{hyp_id}/refutations")
+def find_refutations(hyp_id: str, inp: RefuteIn):
+    """Capability (a): minimal sets of data points that JOINTLY refute this hypothesis
+    while (ideally) no member refutes it alone."""
+    from .conjunction import find_refuting_sets, pairwise_refutations
+    m = pipeline.matrix()
+    h = next((r.hypothesis for r in m.results if r.hypothesis.hyp_id == hyp_id), None)
+    if not h:
+        raise HTTPException(404, "hypothesis not found")
+    dp_by = {dp.dp_id: dp for dp in m.data_points}
+    sets = find_refuting_sets(h, m.data_points, pipeline.scorer,
+                              max_size=inp.max_size, n_seeds=inp.n_seeds,
+                              shortlist=inp.shortlist)
+    return {
+        "hypothesis": h.text,
+        "refuting_sets": [{
+            "dp_ids": s.dp_ids,
+            "data_points": [dp_by[i].text for i in s.dp_ids if i in dp_by],
+            "size": s.size,
+            "joint_lift": round(s.joint_lift, 4),
+            "member_lifts": {k: round(v, 4) for k, v in s.member_lifts.items()},
+            "conjunction_only": s.is_conjunction_only,
+            "rationale": s.rationale,
+            "llm_calls": s.llm_calls,
+        } for s in sets],
+        # baseline: what a pairwise checker would find on its own
+        "pairwise_refuting_dp_ids": pairwise_refutations(h, m.data_points,
+                                                         pipeline.scorer),
+    }
+
+
+@app.post("/api/residuals")
+def detect_residuals(inp: ResidualIn):
+    """Capability (b): coherent clusters of data points no hypothesis explains, each
+    with an abduced missing hypothesis."""
+    from .residual import (detect_missing_hypotheses, find_residuals,
+                           retrieval_baseline)
+    m = pipeline.matrix()
+    dp_by = {dp.dp_id: dp for dp in m.data_points}
+    residual_dps = find_residuals(m.hypotheses, m.data_points, m.cells, inp.epsilon)
+    clusters = detect_missing_hypotheses(
+        m.hypotheses, m.data_points, m.cells, pipeline.scorer, pipeline.backend,
+        epsilon=inp.epsilon, min_cluster_size=inp.min_cluster_size,
+        distance_threshold=inp.distance_threshold, verify=inp.verify)
+    return {
+        "n_data_points": len(m.data_points),
+        "n_residuals": len(residual_dps),
+        "residual_dp_ids": [dp.dp_id for dp in residual_dps],
+        "clusters": [{
+            "dp_ids": c.dp_ids,
+            "data_points": [dp_by[i].text for i in c.dp_ids if i in dp_by],
+            "size": c.size,
+            "coherence": round(c.coherence, 4),
+            "abduced_hypothesis": c.abduced_hypothesis,
+            "why": c.abduction_why,
+            "explains_fraction": round(c.explains_fraction, 3),
+            "admitted": c.admitted,
+            "notes": c.notes,
+        } for c in clusters],
+        # baseline: what similarity-ranked retrieval would surface instead
+        "retrieval_baseline_dp_ids": retrieval_baseline(m.hypotheses, m.data_points,
+                                                        pipeline.backend),
+    }
+
+
+def _llm_stats() -> dict:
+    """Successes/failures of the underlying LLM client, if it is the real one.
+
+    A failed scoring call degrades to caller defaults (lift 1.0 = "no bearing"),
+    which is indistinguishable from a genuine neutral verdict. Surfacing the counts
+    means silent degradation can be noticed rather than mistaken for a result.
+    """
+    llm = getattr(getattr(pipeline, "scorer", None), "llm", None) \
+          or getattr(pipeline, "llm", None)
+    ok = getattr(llm, "_successes", None)
+    bad = getattr(llm, "_failures", None)
+    if ok is None:
+        return {}
+    return {"llm_calls_ok": ok, "llm_calls_failed": bad,
+            "degraded": bool(bad),
+            # the actual failure messages — without these, a non-zero failure count
+            # says something is wrong but not what
+            "errors": list(getattr(llm, "_recent_errors", []))[:8]}
+
+
 def _matrix_json(m: Matrix) -> dict:
     dp_by = {dp.dp_id: dp for dp in m.data_points}
     return {
@@ -152,6 +275,7 @@ def _matrix_json(m: Matrix) -> dict:
                          "noise": dp.meta.get("noise"),
                          "diagnosticity": round(m.diagnosticity.get(dp.dp_id, 0.0), 3)}
                         for dp in m.data_points],
+        "llm": _llm_stats(),
         "cells": {f"{h}|{d}": {"lift": round(c.lift, 3), "log_lift": round(c.log_lift, 3),
                                "verdict": c.verdict}
                   for (h, d), c in m.cells.items()},
@@ -270,3 +394,22 @@ def ui_hypothesis(hyp_id: str):
 def _page(body) -> str:
     from fasthtml.common import to_xml, Html, Head, Body, Title
     return to_xml(Html(Head(Title("Counterpoint"), Style(_CSS)), Body(body)))
+
+
+# ---------------------------------------------------------------- error visibility
+@app.exception_handler(Exception)
+async def _unhandled(request, exc):
+    """Return the actual error and traceback instead of a bare 500.
+
+    This is a PoC/diagnostic service: an opaque "Internal Server Error" forces the
+    caller to guess, and guessing has cost several full evaluation runs. The client
+    logs the response body, so the traceback lands in --log-file automatically.
+    """
+    import traceback
+    from fastapi.responses import JSONResponse
+    tb = traceback.format_exc()
+    print(tb, flush=True)
+    return JSONResponse(status_code=500, content={
+        "error": f"{type(exc).__name__}: {exc}",
+        "traceback": tb.splitlines()[-25:],
+    })

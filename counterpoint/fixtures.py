@@ -61,8 +61,18 @@ def load_scenario(path: str | Path) -> Scenario:
 
 
 def all_scenarios() -> list[Scenario]:
-    return [load_scenario(p) for p in sorted(DATA_DIR.glob("*.yaml"))]
-
+    """Files that are not scenario-shaped (e.g. capability-test case files, which are
+    lists) are skipped rather than crashing the loader — data/ is a shared directory."""
+    out = []
+    for p in sorted(DATA_DIR.glob("*.yaml")):
+        try:
+            raw = yaml.safe_load(p.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if not isinstance(raw, dict) or "episodes" not in raw:
+            continue
+        out.append(load_scenario(p))
+    return out
 
 def inject_noise(scenario: Scenario, n: int = 4, seed: int = 0,
                  duplicate: int = 1) -> Scenario:

@@ -31,6 +31,8 @@ class StepLogger:
         self.verbose = verbose
         self.records: list[dict] = []
         self._t0 = time.time()
+        # optional persistent sink: the full rich trace is written here regardless
+        # of --quiet, so there's a report on disk after the run, not just scrollback.
         self._fh = open(log_file, "w", encoding="utf-8") if log_file else None
 
     def _p(self, s: str = ""):
@@ -65,12 +67,23 @@ class StepLogger:
         self._p(f"    → {method} {url}")
         if payload is not None:
             body = json.dumps(payload, ensure_ascii=False)
-            self._p(f"      body: {textwrap.shorten(body, 200)}")
+            self._p_split(f"      body: {textwrap.shorten(body, 200)}",
+                          f"      body: {body}")
+
+    def _p_split(self, console_text: str, file_text: str):
+        """Console gets a readable short form; the log file gets the full text.
+        A persisted run is then fully diagnosable without a second mechanism."""
+        if self.verbose:
+            print(console_text, flush=True)
+        if self._fh:
+            self._fh.write(file_text + "\n")
+            self._fh.flush()
 
     def response(self, status: int, elapsed_ms: float, body_preview: str):
         self._p(f"    ← {status}  ({elapsed_ms:.0f} ms)")
         if body_preview:
-            self._p(f"      {textwrap.shorten(body_preview, 240)}")
+            self._p_split(f"      {textwrap.shorten(body_preview, 240)}",
+                          f"      {body_preview}")
 
     def detail(self, msg: str):
         self._p(f"      · {msg}")
@@ -97,7 +110,9 @@ class ApiClient:
     """Thin HTTP client with logging. Same interface whether local or cloud."""
     base_url: str
     log: StepLogger
-    timeout: float = 120.0
+    # Real-model matrix builds take minutes even with server-side concurrency;
+    # 120s was silently killing every scoring request.
+    timeout: float = 900.0
     _client: httpx.Client = field(init=False)
 
     def __post_init__(self):
@@ -113,7 +128,7 @@ class ApiClient:
         try:
             preview = json.dumps(r.json(), ensure_ascii=False)
         except Exception:
-            preview = r.text[:240]
+            preview = r.text
         self.log.response(r.status_code, ms, preview)
         return r
 
@@ -128,15 +143,24 @@ class ApiClient:
 
 
 # --------------------------------------------------------------------------- health
-def wait_for_health(client: ApiClient, retries: int = 10, delay: float = 1.0) -> bool:
-    """Poll until the deployment answers. Uses /docs (always present on FastAPI)."""
+def wait_for_health(client: ApiClient, retries: int = 10, delay: float = 1.0,
+                    is_alive=None) -> bool:
+    """Poll until the deployment answers. Uses /docs (always present on FastAPI).
+
+    `is_alive`, if given, is called each round; returning False aborts immediately.
+    This stops a long health window from masking a server that died at startup.
+    """
     for i in range(retries):
+        if is_alive is not None and not is_alive():
+            client.log.detail("server process exited during startup")
+            return False
         try:
             r = client._client.get("/docs")
             if r.status_code < 500:
                 client.log.detail(f"health ok after {i+1} attempt(s)")
                 return True
         except Exception as e:
-            client.log.detail(f"health attempt {i+1} failed: {e}")
+            if i < 3 or i % 10 == 0:      # don't spam for long windows
+                client.log.detail(f"health attempt {i+1} failed: {e}")
         time.sleep(delay)
     return False
